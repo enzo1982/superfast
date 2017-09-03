@@ -9,15 +9,15 @@ The idea to use multiple codec instances to speed-up audio encoding goes back to
 
 To achieve a speed-up, the audio stream is divided into overlapping chunks of audio frames. The chunks are then given to the codec instances in a round-robin manner. Finally, encoded packets are taken from the codec instances and written to the output file in the correct order.
 
-For technical details on how this is implemented, please refer to [this blog post](https://freac.org/developer-blog-mainmenu-9/14-freac/257-introducing-superfast-conversions/) or [the PDF](https://github.com/enzo1982/superfast/doc/SuperFast%20Codecs.pdf).
+For technical details on how this is implemented, please refer to [this blog post](https://freac.org/developer-blog-mainmenu-9/14-freac/257-introducing-superfast-conversions/) or [the PDF](https://github.com/enzo1982/superfast/blob/master/doc/SuperFast%20Codecs.pdf).
 
 ## Download
 
 Download an experimental fre:ac build with multi-threaded Opus, FAAC* and Core Audio converters:
-- Windows: [x86-64](https://github.com/enzo1982/superfast/releases/download/v1.0-pre1/freac-1.1-alpha-20170902-superfast-windows-x64.zip), [i686](https://github.com/enzo1982/superfast/releases/download/v0.1/freac-1.1-alpha-20170902-superfast-windows.zip)
-- macOS: [Universal Binary](https://github.com/enzo1982/superfast/releases/download/v1.0-pre1/freac-1.1-alpha-20170902-superfast-macos.dmg) (x86-64, i686 and PPC)
-- Linux: [x86-64](https://github.com/enzo1982/superfast/releases/download/v1.0-pre1/freac-1.1-alpha-20170902-superfast-linux-x64.tar.gz), [i686](https://github.com/enzo1982/superfast/releases/download/v0.1/freac-1.1-alpha-20170902-superfast-linux.tar.gz)
-- FreeBSD: [x86-64](https://github.com/enzo1982/superfast/releases/download/v1.0-pre1/freac-1.1-alpha-20170902-superfast-freebsd-x64.tar.gz), [i686](https://github.com/enzo1982/superfast/releases/download/v0.1/freac-1.1-alpha-20170902-superfast-freebsd.tar.gz)
+- Windows: [x86-64](https://github.com/enzo1982/superfast/releases/download/v1.0-pre1/freac-1.1-alpha-20170902-superfast-windows-x64.zip), [i686](https://github.com/enzo1982/superfast/releases/download/v1.0-pre1/freac-1.1-alpha-20170902-superfast-windows.zip)
+- macOS: [Universal Binary](https://github.com/enzo1982/superfast/releases/download/v1.0-pre1/freac-1.1-alpha-20170902-superfast-macosx.dmg) (x86-64, i686 and PPC)
+- Linux: [x86-64](https://github.com/enzo1982/superfast/releases/download/v1.0-pre1/freac-1.1-alpha-20170902-superfast-linux-x64.tar.gz), [i686](https://github.com/enzo1982/superfast/releases/download/v1.0-pre1/freac-1.1-alpha-20170902-superfast-linux.tar.gz)
+- FreeBSD: [x86-64](https://github.com/enzo1982/superfast/releases/download/v1.0-pre1/freac-1.1-alpha-20170902-superfast-freebsd-x64.tar.gz), [i686](https://github.com/enzo1982/superfast/releases/download/v1.0-pre1/freac-1.1-alpha-20170902-superfast-freebsd.tar.gz)
 
 \* The FAAC codec is provided as a fallback when the Core Audio codecs are not available.
 

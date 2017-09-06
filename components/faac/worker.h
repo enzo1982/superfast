@@ -23,7 +23,6 @@ namespace BoCA
 			Mutex				 workerMutex;
 
 			faacEncHandle			 handle;
-			faacEncConfigurationPtr		 fConfig;
 
 			Format				 format;
 

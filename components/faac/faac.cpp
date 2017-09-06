@@ -413,11 +413,9 @@ Int BoCA::EncoderFAAC::EncodeFrames(Bool flush)
 
 	/* Pad end of stream with empty samples.
 	 */
-	Int	 nullSamples = 0;
-
 	if (flush && samplesBuffer.Size() > 0)
 	{
-		nullSamples = frameSize - (samplesBuffer.Size() / format.channels * (format.bits <= 16 ? 2 : 1)) % frameSize;
+		Int	 nullSamples = frameSize - (samplesBuffer.Size() / format.channels * (format.bits <= 16 ? 2 : 1)) % frameSize;
 
 		samplesBuffer.Resize(samplesBuffer.Size() + nullSamples * format.channels / (format.bits <= 16 ? 2 : 1));
 

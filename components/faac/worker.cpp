@@ -12,8 +12,6 @@
 
 #include <smooth.h>
 
-#include <stdint.h>
-
 #include "worker.h"
 #include "config.h"
 
@@ -36,7 +34,7 @@ BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 
 	/* Set encoder parameters.
 	 */
-	fConfig = ex_faacEncGetCurrentConfiguration(handle);
+	faacEncConfigurationPtr	 fConfig = ex_faacEncGetCurrentConfiguration(handle);
 
 	fConfig->mpegVersion	= config->GetIntValue("FAAC", "MP4Container", True) ? MPEG4 : config->GetIntValue("FAAC", "MPEGVersion", 0);
 	fConfig->aacObjectType	= LOW;

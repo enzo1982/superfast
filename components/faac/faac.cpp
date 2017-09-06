@@ -142,19 +142,6 @@ Bool BoCA::EncoderFAAC::Activate()
 
 	fConfig->mpegVersion	= config->GetIntValue("FAAC", "MP4Container", True) ? MPEG4 : config->GetIntValue("FAAC", "MPEGVersion", 0);
 	fConfig->aacObjectType	= LOW;
-	fConfig->allowMidside	= config->GetIntValue("FAAC", "AllowJS", True);
-	fConfig->useTns		= config->GetIntValue("FAAC", "UseTNS", False);
-	fConfig->bandWidth	= config->GetIntValue("FAAC", "BandWidth", 22050);
-
-	if (config->GetIntValue("FAAC", "MP4Container", True)) fConfig->outputFormat = 0; // Raw AAC frame headers
-
-	if (config->GetIntValue("FAAC", "SetQuality", True))   fConfig->quantqual    = config->GetIntValue("FAAC", "AACQuality", 100);
-	else						       fConfig->bitRate	     = config->GetIntValue("FAAC", "Bitrate", 96) * 1000;
-
-	if (format.bits ==  8) fConfig->inputFormat = FAAC_INPUT_16BIT;
-	if (format.bits == 16) fConfig->inputFormat = FAAC_INPUT_16BIT;
-	if (format.bits == 24) fConfig->inputFormat = FAAC_INPUT_32BIT;
-	if (format.bits == 32) fConfig->inputFormat = FAAC_INPUT_32BIT;
 
 	ex_faacEncSetConfiguration(handle, fConfig);
 

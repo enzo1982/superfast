@@ -51,7 +51,7 @@ namespace BoCA
 			Bool				 Lock()			{ return workerMutex.Lock(); }
 			Bool				 Release()		{ return workerMutex.Release(); }
 
-			Bool				 IsReady()		{ return !process; }
+			Bool				 IsReady() const	{ return !process; }
 
 			const Buffer<unsigned char>	&GetPackets() const	{ return packetBuffer; };
 			const Array<Int>		&GetPacketSizes() const	{ return packetSizes; };

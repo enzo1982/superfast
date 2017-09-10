@@ -13,7 +13,6 @@
 #include <smooth.h>
 
 #include "worker.h"
-#include "config.h"
 
 namespace BoCA
 {

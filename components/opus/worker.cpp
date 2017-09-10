@@ -15,7 +15,6 @@
 #include <stdint.h>
 
 #include "worker.h"
-#include "config.h"
 
 BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 {

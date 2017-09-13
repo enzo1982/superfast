@@ -13,16 +13,14 @@
 #include <boca.h>
 #include "dllinterface.h"
 
-using namespace smooth::Threads;
-
 namespace BoCA
 {
-	class SuperWorker : public Thread
+	class SuperWorker : public Threads::Thread
 	{
 		friend CA::OSStatus	 AudioConverterComplexInputDataProc(CA::AudioConverterRef, CA::UInt32 *, CA::AudioBufferList *, CA::AudioStreamPacketDescription **, void *);
 
 		private:
-			Mutex						 workerMutex;
+			Threads::Mutex					 workerMutex;
 
 			CA::AudioConverterRef				 converter;
 			CA::AudioBufferList				*buffers;

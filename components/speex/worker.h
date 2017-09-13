@@ -13,14 +13,12 @@
 #include <boca.h>
 #include "dllinterface.h"
 
-using namespace smooth::Threads;
-
 namespace BoCA
 {
-	class SuperWorker : public Thread
+	class SuperWorker : public Threads::Thread
 	{
 		private:
-			Mutex				 workerMutex;
+			Threads::Mutex			 workerMutex;
 
 			void				*encoder;
 			SpeexBits			 bits;

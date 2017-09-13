@@ -20,8 +20,6 @@
 #include "opus.h"
 #include "config.h"
 
-using namespace smooth::IO;
-
 const String &BoCA::EncoderOpus::GetComponentSpecs()
 {
 	static String	 componentSpecs;

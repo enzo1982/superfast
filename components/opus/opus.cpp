@@ -345,6 +345,8 @@ Bool BoCA::EncoderOpus::Deactivate()
 	 */
 	AS::Registry	&boca = AS::Registry::Get();
 
+	resampler->Deactivate();
+
 	boca.DeleteComponent(resampler);
 
 	Config::Free(resamplerConfig);

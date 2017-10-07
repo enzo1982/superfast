@@ -12,20 +12,22 @@
 
 #include "config.h"
 
+const String	 BoCA::ConfigureOpus::ConfigID = "Opus";
+
 BoCA::ConfigureOpus::ConfigureOpus()
 {
-	Config	*config = Config::Get();
+	const Config	*config = Config::Get();
 
-	fileExtension	= config->GetIntValue("Opus", "FileExtension", 0);
-	bitrate		= config->GetIntValue("Opus", "Bitrate", 128) / 2;
-	complexity	= config->GetIntValue("Opus", "Complexity", 10);
-	framesize	= config->GetIntValue("Opus", "FrameSize", 20000);
+	fileExtension	= config->GetIntValue(ConfigID, "FileExtension", 0);
+	bitrate		= config->GetIntValue(ConfigID, "Bitrate", 128) / 2;
+	complexity	= config->GetIntValue(ConfigID, "Complexity", 10);
+	framesize	= config->GetIntValue(ConfigID, "FrameSize", 20000);
 	framesize	= Math::Round(framesize <= 10000 ? Math::Log2(framesize / 2500) : framesize / 20000 + 2);
-	packet_loss	= config->GetIntValue("Opus", "PacketLoss", 0);
+	packet_loss	= config->GetIntValue(ConfigID, "PacketLoss", 0);
 
-	enableVBR	= config->GetIntValue("Opus", "EnableVBR", True);
-	enableCVBR	= config->GetIntValue("Opus", "EnableConstrainedVBR", False);
-	enableDTX	= config->GetIntValue("Opus", "EnableDTX", False);
+	enableVBR	= config->GetIntValue(ConfigID, "EnableVBR", True);
+	enableCVBR	= config->GetIntValue(ConfigID, "EnableConstrainedVBR", False);
+	enableDTX	= config->GetIntValue(ConfigID, "EnableDTX", False);
 
 	I18n	*i18n = I18n::Get();
 
@@ -39,7 +41,7 @@ BoCA::ConfigureOpus::ConfigureOpus()
 	combo_mode->AddEntry(i18n->TranslateString("Auto"));
 	combo_mode->AddEntry(i18n->TranslateString("Voice"));
 	combo_mode->AddEntry(i18n->TranslateString("Music"));
-	combo_mode->SelectNthEntry(config->GetIntValue("Opus", "Mode", 0));
+	combo_mode->SelectNthEntry(config->GetIntValue(ConfigID, "Mode", 0));
 	combo_mode->onSelectEntry.Connect(&ConfigureOpus::SetMode, this);
 
 	text_bandwidth		= new Text(i18n->AddColon(i18n->TranslateString("Bandwidth")), Point(7, 40));
@@ -51,7 +53,7 @@ BoCA::ConfigureOpus::ConfigureOpus()
 	combo_bandwidth->AddEntry(i18n->TranslateString("Wideband"));
 	combo_bandwidth->AddEntry(i18n->TranslateString("Superwideband"));
 	combo_bandwidth->AddEntry(i18n->TranslateString("Fullband"));
-	combo_bandwidth->SelectNthEntry(config->GetIntValue("Opus", "Bandwidth", 0));
+	combo_bandwidth->SelectNthEntry(config->GetIntValue(ConfigID, "Bandwidth", 0));
 
 	Int	 maxTextSize = Math::Max(text_mode->GetUnscaledTextWidth(), text_bandwidth->GetUnscaledTextWidth());
 
@@ -204,19 +206,19 @@ Int BoCA::ConfigureOpus::SaveSettings()
 {
 	Config	*config = Config::Get();
 
-	config->SetIntValue("Opus", "Mode", combo_mode->GetSelectedEntryNumber());
-	config->SetIntValue("Opus", "Bandwidth", combo_bandwidth->GetSelectedEntryNumber());
+	config->SetIntValue(ConfigID, "Mode", combo_mode->GetSelectedEntryNumber());
+	config->SetIntValue(ConfigID, "Bandwidth", combo_bandwidth->GetSelectedEntryNumber());
 
-	config->SetIntValue("Opus", "FileExtension", fileExtension);
+	config->SetIntValue(ConfigID, "FileExtension", fileExtension);
 
-	config->SetIntValue("Opus", "Bitrate", bitrate * 2);
-	config->SetIntValue("Opus", "Complexity", complexity);
-	config->SetIntValue("Opus", "FrameSize", Math::Min(framesize <= 2 ? (Int) (2500 * Math::Pow(2, framesize)) : 20000 * (framesize - 2), 120000));
-	config->SetIntValue("Opus", "PacketLoss", packet_loss);
+	config->SetIntValue(ConfigID, "Bitrate", bitrate * 2);
+	config->SetIntValue(ConfigID, "Complexity", complexity);
+	config->SetIntValue(ConfigID, "FrameSize", Math::Min(framesize <= 2 ? (Int) (2500 * Math::Pow(2, framesize)) : 20000 * (framesize - 2), 120000));
+	config->SetIntValue(ConfigID, "PacketLoss", packet_loss);
 
-	config->SetIntValue("Opus", "EnableVBR", enableVBR);
-	config->SetIntValue("Opus", "EnableConstrainedVBR", enableCVBR);
-	config->SetIntValue("Opus", "EnableDTX", enableDTX);
+	config->SetIntValue(ConfigID, "EnableVBR", enableVBR);
+	config->SetIntValue(ConfigID, "EnableConstrainedVBR", enableCVBR);
+	config->SetIntValue(ConfigID, "EnableDTX", enableDTX);
 
 	return Success();
 }

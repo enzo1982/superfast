@@ -117,7 +117,6 @@ Bool BoCA::EncoderOpus::Activate()
 {
 	static Endianness	 endianness = CPU().GetEndianness();
 
-	const Config	*config = GetConfiguration();
 	const Format	&format = track.GetFormat();
 	Info		 info = track.GetInfo();
 
@@ -128,6 +127,10 @@ Bool BoCA::EncoderOpus::Activate()
 
 		return False;
 	}
+
+	/* Get configuration.
+	 */
+	const Config	*config = GetConfiguration();
 
 	/* Get best sample rate.
 	 */
@@ -206,7 +209,7 @@ Bool BoCA::EncoderOpus::Activate()
 
 	setup.preskip = preSkip * (48000 / sampleRate);
 
-	frameSize     = Math::Round(Float(sampleRate) / (1000000.0 / config->GetIntValue("Opus", "FrameSize", 20000)));
+	frameSize     = Math::Round(Float(sampleRate) / (1000000.0 / config->GetIntValue(ConfigureOpus::ConfigID, "FrameSize", 20000)));
 	totalSamples  = preSkip;
 	numPackets    = 0;
 
@@ -615,7 +618,7 @@ String BoCA::EncoderOpus::GetOutputFileExtension() const
 {
 	const Config	*config = GetConfiguration();
 
-	switch (config->GetIntValue("Opus", "FileExtension", 0))
+	switch (config->GetIntValue(ConfigureOpus::ConfigID, "FileExtension", 0))
 	{
 		default:
 		case  0: return "opus";

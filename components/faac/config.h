@@ -26,72 +26,74 @@ namespace BoCA
 	class ConfigureFAAC : public ConfigLayer
 	{
 		private:
-			TabWidget	*tabwidget;
+			TabWidget		*tabwidget;
 
-			Layer		*layer_format;
+			Layer			*layer_format;
 
-			GroupBox	*group_version;
-			OptionBox	*option_version_mpeg2;
-			OptionBox	*option_version_mpeg4;
+			GroupBox		*group_version;
+			OptionBox		*option_version_mpeg2;
+			OptionBox		*option_version_mpeg4;
 
-			GroupBox	*group_id3v2;
-			CheckBox	*check_id3v2;
-			Text		*text_note;
-			Text		*text_id3v2;
+			GroupBox		*group_id3v2;
+			CheckBox		*check_id3v2;
+			Text			*text_note;
+			Text			*text_id3v2;
 
-			GroupBox	*group_mp4;
-			OptionBox	*option_mp4;
-			OptionBox	*option_aac;
+			GroupBox		*group_mp4;
+			OptionBox		*option_mp4;
+			OptionBox		*option_aac;
 
-			GroupBox	*group_extension;
-			OptionBox	*option_extension_m4a;
-			OptionBox	*option_extension_m4b;
-			OptionBox	*option_extension_m4r;
-			OptionBox	*option_extension_mp4;
+			GroupBox		*group_extension;
+			OptionBox		*option_extension_m4a;
+			OptionBox		*option_extension_m4b;
+			OptionBox		*option_extension_m4r;
+			OptionBox		*option_extension_mp4;
 
-			Layer		*layer_quality;
+			Layer			*layer_quality;
 
-			GroupBox	*group_bitrate;
-			Slider		*slider_bitrate;
-			OptionBox	*option_bitrate;
-			EditBox		*edit_bitrate;
-			Text		*text_bitrate_kbps;
-			Slider		*slider_quality;
-			OptionBox	*option_quality;
-			EditBox		*edit_quality;
-			Text		*text_quality_percent;
+			GroupBox		*group_bitrate;
+			Slider			*slider_bitrate;
+			OptionBox		*option_bitrate;
+			EditBox			*edit_bitrate;
+			Text			*text_bitrate_kbps;
+			Slider			*slider_quality;
+			OptionBox		*option_quality;
+			EditBox			*edit_quality;
+			Text			*text_quality_percent;
 
-			GroupBox	*group_js;
-			CheckBox	*check_js;
+			GroupBox		*group_js;
+			CheckBox		*check_js;
 
-			GroupBox	*group_tns;
-			CheckBox	*check_tns;
+			GroupBox		*group_tns;
+			CheckBox		*check_tns;
 
-			GroupBox	*group_bandwidth;
-			Text		*text_bandwidth;
-			EditBox		*edit_bandwidth;
+			GroupBox		*group_bandwidth;
+			Text			*text_bandwidth;
+			EditBox			*edit_bandwidth;
 
-			Int		 mpegVersion;
-			Int		 bitrate;
-			Bool		 allowjs;
-			Bool		 usetns;
-			Int		 setQuality;
-			Int		 aacQuality;
-			Bool		 allowID3;
-			Int		 fileFormat;
-			Int		 fileExtension;
+			Int			 mpegVersion;
+			Int			 bitrate;
+			Bool			 allowjs;
+			Bool			 usetns;
+			Int			 setQuality;
+			Int			 aacQuality;
+			Bool			 allowID3;
+			Int			 fileFormat;
+			Int			 fileExtension;
 		slots:
-			Void		 SetBitrate();
-			Void		 SetBitrateByEditBox();
-			Void		 SetQuality();
-			Void		 SetQualityByEditBox();
-			Void		 SetFileFormat();
-			Void		 ToggleBitrateQuality();
+			Void			 SetBitrate();
+			Void			 SetBitrateByEditBox();
+			Void			 SetQuality();
+			Void			 SetQualityByEditBox();
+			Void			 SetFileFormat();
+			Void			 ToggleBitrateQuality();
 		public:
-					 ConfigureFAAC();
-					~ConfigureFAAC();
+			static const String	 ConfigID;
 
-			Int		 SaveSettings();
+						 ConfigureFAAC();
+						~ConfigureFAAC();
+
+			Int			 SaveSettings();
 	};
 };
 

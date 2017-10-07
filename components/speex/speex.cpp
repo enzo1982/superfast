@@ -91,7 +91,6 @@ BoCA::EncoderSpeex::~EncoderSpeex()
 
 Bool BoCA::EncoderSpeex::Activate()
 {
-	const Config	*config = GetConfiguration();
 	const Format	&format = track.GetFormat();
 	const Info	&info = track.GetInfo();
 
@@ -103,6 +102,10 @@ Bool BoCA::EncoderSpeex::Activate()
 		return False;
 	}
 
+	/* Get configuration.
+	 */
+	const Config	*config = GetConfiguration();
+
 	/* Init Ogg stream.
 	 */
 	srand(clock());
@@ -111,7 +114,7 @@ Bool BoCA::EncoderSpeex::Activate()
 
 	/* Get Speex mode ID.
 	 */
-	Int	 modeID = config->GetIntValue("Speex", "Mode", -1);
+	Int	 modeID = config->GetIntValue(ConfigureSpeex::ConfigID, "Mode", -1);
 
 	if (modeID == -1)
 	{
@@ -142,9 +145,9 @@ Bool BoCA::EncoderSpeex::Activate()
 	ex_speex_init_header(&speex_header, format.rate, format.channels, ex_speex_lib_get_mode(modeID));
 
 	speex_header.frames_per_packet = 1;
-	speex_header.vbr	       = config->GetIntValue("Speex", "VBR", 0);
+	speex_header.vbr	       = config->GetIntValue(ConfigureSpeex::ConfigID, "VBR", 0);
 
-	/* Write Speex header
+	/* Write Speex header.
 	 */
 	int		 bytes;
 	unsigned char	*buffer = (unsigned char *) ex_speex_header_to_packet(&speex_header, &bytes);
@@ -154,7 +157,7 @@ Bool BoCA::EncoderSpeex::Activate()
 
 	ex_speex_header_free(buffer);
 
-	/* Write Vorbis comment header
+	/* Write Vorbis comment header.
 	 */
 	{
 		char	*speexVersion = NIL;

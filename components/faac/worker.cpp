@@ -13,6 +13,7 @@
 #include <smooth.h>
 
 #include "worker.h"
+#include "config.h"
 
 BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 {
@@ -23,6 +24,17 @@ BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 	format	= iFormat;
 
 	threadMain.Connect(&SuperWorker::Run, this);
+
+	/* Get configuration.
+	 */
+	Bool	 mp4Container = config->GetIntValue(ConfigureFAAC::ConfigID, "MP4Container", True);
+	Int	 mpegVersion  = config->GetIntValue(ConfigureFAAC::ConfigID, "MPEGVersion", 0);
+	Bool	 setQuality   = config->GetIntValue(ConfigureFAAC::ConfigID, "SetQuality", True);
+	Int	 aacQuality   = config->GetIntValue(ConfigureFAAC::ConfigID, "AACQuality", 100);
+	Int	 bitrate      = config->GetIntValue(ConfigureFAAC::ConfigID, "Bitrate", 96);
+	Bool	 allowJS      = config->GetIntValue(ConfigureFAAC::ConfigID, "AllowJS", True);
+	Bool	 useTNS	      = config->GetIntValue(ConfigureFAAC::ConfigID, "UseTNS", False);
+	Int	 bandwidth    = config->GetIntValue(ConfigureFAAC::ConfigID, "BandWidth", 22050);
 
 	/* Create FAAC encoder.
 	 */
@@ -35,16 +47,16 @@ BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 	 */
 	faacEncConfigurationPtr	 fConfig = ex_faacEncGetCurrentConfiguration(handle);
 
-	fConfig->mpegVersion	= config->GetIntValue("FAAC", "MP4Container", True) ? MPEG4 : config->GetIntValue("FAAC", "MPEGVersion", 0);
+	fConfig->mpegVersion	= mp4Container ? MPEG4 : mpegVersion;
 	fConfig->aacObjectType	= LOW;
-	fConfig->allowMidside	= config->GetIntValue("FAAC", "AllowJS", True);
-	fConfig->useTns		= config->GetIntValue("FAAC", "UseTNS", False);
-	fConfig->bandWidth	= config->GetIntValue("FAAC", "BandWidth", 22050);
+	fConfig->allowMidside	= allowJS;
+	fConfig->useTns		= useTNS;
+	fConfig->bandWidth	= bandwidth;
 
-	if (config->GetIntValue("FAAC", "MP4Container", True)) fConfig->outputFormat = 0; // Raw AAC frame headers
+	if (mp4Container) fConfig->outputFormat = 0; // Raw AAC frame headers
 
-	if (config->GetIntValue("FAAC", "SetQuality", True))   fConfig->quantqual    = config->GetIntValue("FAAC", "AACQuality", 100);
-	else						       fConfig->bitRate	     = config->GetIntValue("FAAC", "Bitrate", 96) * 1000;
+	if (setQuality)	fConfig->quantqual = aacQuality;
+	else		fConfig->bitRate   = bitrate * 1000;
 
 	if (format.bits ==  8) fConfig->inputFormat = FAAC_INPUT_16BIT;
 	if (format.bits == 16) fConfig->inputFormat = FAAC_INPUT_16BIT;

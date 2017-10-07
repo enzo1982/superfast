@@ -13,16 +13,18 @@
 #include "config.h"
 #include "dllinterface.h"
 
+const String	 BoCA::ConfigureFDKAAC::ConfigID = "FDKAAC";
+
 BoCA::ConfigureFDKAAC::ConfigureFDKAAC()
 {
-	Config	*config = Config::Get();
+	const Config	*config = Config::Get();
 
-	mpegVersion	= config->GetIntValue("FDKAAC", "MPEGVersion", 0);
-	aacType		= config->GetIntValue("FDKAAC", "AACType", AOT_SBR);
-	bitrate		= config->GetIntValue("FDKAAC", "Bitrate", 64);
-	allowID3	= config->GetIntValue("FDKAAC", "AllowID3v2", False);
-	fileFormat	= config->GetIntValue("FDKAAC", "MP4Container", True);
-	fileExtension	= config->GetIntValue("FDKAAC", "MP4FileExtension", 0);
+	mpegVersion	= config->GetIntValue(ConfigID, "MPEGVersion", 0);
+	aacType		= config->GetIntValue(ConfigID, "AACType", AOT_SBR);
+	bitrate		= config->GetIntValue(ConfigID, "Bitrate", 64);
+	allowID3	= config->GetIntValue(ConfigID, "AllowID3v2", False);
+	fileFormat	= config->GetIntValue(ConfigID, "MP4Container", True);
+	fileExtension	= config->GetIntValue(ConfigID, "MP4FileExtension", 0);
 
 	I18n	*i18n = I18n::Get();
 
@@ -197,12 +199,12 @@ Int BoCA::ConfigureFDKAAC::SaveSettings()
 	if (bitrate <	8) bitrate =   8;
 	if (bitrate > 256) bitrate = 256;
 
-	config->SetIntValue("FDKAAC", "MPEGVersion", mpegVersion);
-	config->SetIntValue("FDKAAC", "AACType", aacType);
-	config->SetIntValue("FDKAAC", "Bitrate", bitrate);
-	config->SetIntValue("FDKAAC", "AllowID3v2", allowID3);
-	config->SetIntValue("FDKAAC", "MP4Container", fileFormat);
-	config->SetIntValue("FDKAAC", "MP4FileExtension", fileExtension);
+	config->SetIntValue(ConfigID, "MPEGVersion", mpegVersion);
+	config->SetIntValue(ConfigID, "AACType", aacType);
+	config->SetIntValue(ConfigID, "Bitrate", bitrate);
+	config->SetIntValue(ConfigID, "AllowID3v2", allowID3);
+	config->SetIntValue(ConfigID, "MP4Container", fileFormat);
+	config->SetIntValue(ConfigID, "MP4FileExtension", fileExtension);
 
 	return Success();
 }

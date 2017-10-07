@@ -1,5 +1,5 @@
  /* BoCA - BonkEnc Component Architecture
-  * Copyright (C) 2007-2015 Robert Kausch <robert.kausch@freac.org>
+  * Copyright (C) 2007-2017 Robert Kausch <robert.kausch@freac.org>
   *
   * This program is free software; you can redistribute it and/or
   * modify it under the terms of the GNU General Public License as
@@ -12,12 +12,14 @@
 
 #include "config.h"
 
+const String	 BoCA::ConfigureSpeex::ConfigID = "Speex";
+
 BoCA::ConfigureSpeex::ConfigureSpeex()
 {
-	Config	*config = Config::Get();
+	const Config	*config = Config::Get();
 
-	quality = config->GetIntValue("Speex", "Quality", 8);
-	bitrate = config->GetIntValue("Speex", "Bitrate", -16);
+	quality = config->GetIntValue(ConfigID, "Quality", 8);
+	bitrate = config->GetIntValue(ConfigID, "Bitrate", -16);
 
 	if (quality > 0) cbrmode = 0;
 	else		 cbrmode = 1;
@@ -25,25 +27,25 @@ BoCA::ConfigureSpeex::ConfigureSpeex()
 	quality = Math::Abs(quality);
 	bitrate = Math::Abs(bitrate);
 
-	vbrmode = config->GetIntValue("Speex", "VBR", 0);
-	vbrq = config->GetIntValue("Speex", "VBRQuality", 80);
-	vbrmax = config->GetIntValue("Speex", "VBRMaxBitrate", -48);
+	vbrmode = config->GetIntValue(ConfigID, "VBR", 0);
+	vbrq = config->GetIntValue(ConfigID, "VBRQuality", 80);
+	vbrmax = config->GetIntValue(ConfigID, "VBRMaxBitrate", -48);
 
 	if (vbrmax > 0) use_vbrmax = True;
 	else		use_vbrmax = False;
 
 	vbrmax = Math::Abs(vbrmax);
 
-	abr = config->GetIntValue("Speex", "ABR", -16);
+	abr = config->GetIntValue(ConfigID, "ABR", -16);
 
 	if (abr > 0) vbrmode = 2;
 
 	abr = Math::Abs(abr);
 
-	complexity = config->GetIntValue("Speex", "Complexity", 3);
+	complexity = config->GetIntValue(ConfigID, "Complexity", 3);
 
-	use_vad = config->GetIntValue("Speex", "VAD", 0);
-	use_dtx = config->GetIntValue("Speex", "DTX", 0);
+	use_vad = config->GetIntValue(ConfigID, "VAD", 0);
+	use_dtx = config->GetIntValue(ConfigID, "DTX", 0);
 
 	I18n	*i18n = I18n::Get();
 
@@ -58,7 +60,7 @@ BoCA::ConfigureSpeex::ConfigureSpeex()
 	combo_profile->AddEntry(i18n->TranslateString("Narrowband (8 kHz)"));
 	combo_profile->AddEntry(i18n->TranslateString("Wideband (16 kHz)"));
 	combo_profile->AddEntry(i18n->TranslateString("Ultra-Wideband (32 kHz)"));
-	combo_profile->SelectNthEntry(config->GetIntValue("Speex", "Mode", -1) + 1);
+	combo_profile->SelectNthEntry(config->GetIntValue(ConfigID, "Mode", -1) + 1);
 
 	group_profile->Add(text_profile);
 	group_profile->Add(combo_profile);
@@ -242,16 +244,16 @@ Int BoCA::ConfigureSpeex::SaveSettings()
 {
 	Config	*config = Config::Get();
 
-	config->SetIntValue("Speex", "Mode", combo_profile->GetSelectedEntryNumber() - 1);
-	config->SetIntValue("Speex", "VBR", vbrmode == 1);
-	config->SetIntValue("Speex", "VBRQuality", vbrq);
-	config->SetIntValue("Speex", "VBRMaxBitrate", use_vbrmax ? vbrmax : -vbrmax);
-	config->SetIntValue("Speex", "ABR", vbrmode == 2 ? abr : -abr);
-	config->SetIntValue("Speex", "Quality", cbrmode == 0 ? quality : -quality);
-	config->SetIntValue("Speex", "Bitrate", cbrmode == 1 ? bitrate : -bitrate);
-	config->SetIntValue("Speex", "Complexity", complexity);
-	config->SetIntValue("Speex", "VAD", use_vad);
-	config->SetIntValue("Speex", "DTX", use_dtx);
+	config->SetIntValue(ConfigID, "Mode", combo_profile->GetSelectedEntryNumber() - 1);
+	config->SetIntValue(ConfigID, "VBR", vbrmode == 1);
+	config->SetIntValue(ConfigID, "VBRQuality", vbrq);
+	config->SetIntValue(ConfigID, "VBRMaxBitrate", use_vbrmax ? vbrmax : -vbrmax);
+	config->SetIntValue(ConfigID, "ABR", vbrmode == 2 ? abr : -abr);
+	config->SetIntValue(ConfigID, "Quality", cbrmode == 0 ? quality : -quality);
+	config->SetIntValue(ConfigID, "Bitrate", cbrmode == 1 ? bitrate : -bitrate);
+	config->SetIntValue(ConfigID, "Complexity", complexity);
+	config->SetIntValue(ConfigID, "VAD", use_vad);
+	config->SetIntValue(ConfigID, "DTX", use_dtx);
 
 	return Success();
 }

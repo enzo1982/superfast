@@ -13,6 +13,7 @@
 #include <smooth.h>
 
 #include "worker.h"
+#include "config.h"
 
 BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 {
@@ -24,12 +25,17 @@ BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 
 	threadMain.Connect(&SuperWorker::Run, this);
 
-	/* Create FDK encoder.
+	/* Get configuration.
+	 */
+	Bool	 mp4Container = config->GetIntValue(ConfigureFDKAAC::ConfigID, "MP4Container", True);
+	Int	 mpegVersion  = config->GetIntValue(ConfigureFDKAAC::ConfigID, "MPEGVersion", 0);
+	Int	 aacType      = config->GetIntValue(ConfigureFDKAAC::ConfigID, "AACType", AOT_SBR);
+	Int	 bitrate      = config->GetIntValue(ConfigureFDKAAC::ConfigID, "Bitrate", 64);
+
+	/* Create and configure FDK AAC encoder.
 	 */
 	ex_aacEncOpen(&handle, 0x07, format.channels);
 
-	/* Set encoder parameters.
-	 */
 	Int	 channelMode = MODE_UNKNOWN;
 
 	switch (format.channels)
@@ -47,15 +53,15 @@ BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 	ex_aacEncoder_SetParam(handle, AACENC_CHANNELMODE, channelMode);
 	ex_aacEncoder_SetParam(handle, AACENC_CHANNELORDER, 1 /* WAVE channel order */);
 
-	ex_aacEncoder_SetParam(handle, AACENC_AOT, config->GetIntValue("FDKAAC", "MPEGVersion", 0) + config->GetIntValue("FDKAAC", "AACType", AOT_SBR));
-	ex_aacEncoder_SetParam(handle, AACENC_BITRATE, config->GetIntValue("FDKAAC", "Bitrate", 64) * 1000 * format.channels);
+	ex_aacEncoder_SetParam(handle, AACENC_AOT, mpegVersion + aacType);
+	ex_aacEncoder_SetParam(handle, AACENC_BITRATE, bitrate * 1000 * format.channels);
 	ex_aacEncoder_SetParam(handle, AACENC_AFTERBURNER, 1);
-	ex_aacEncoder_SetParam(handle, AACENC_TRANSMUX, config->GetIntValue("FDKAAC", "MP4Container", True) ? TT_MP4_RAW : TT_MP4_ADTS);
+	ex_aacEncoder_SetParam(handle, AACENC_TRANSMUX, mp4Container ? TT_MP4_RAW : TT_MP4_ADTS);
 
-	if (!config->GetIntValue("FDKAAC", "MP4Container", True))
+	if (!mp4Container)
 	{
-		if (config->GetIntValue("FDKAAC", "AACType", AOT_SBR) == AOT_ER_AAC_LD ||
-		    config->GetIntValue("FDKAAC", "AACType", AOT_SBR) == AOT_ER_AAC_ELD) ex_aacEncoder_SetParam(handle, AACENC_TRANSMUX, TT_MP4_LOAS);
+		if (aacType == AOT_ER_AAC_LD ||
+		    aacType == AOT_ER_AAC_ELD) ex_aacEncoder_SetParam(handle, AACENC_TRANSMUX, TT_MP4_LOAS);
 	}
 
 	AACENC_InfoStruct	 aacInfo;

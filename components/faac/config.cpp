@@ -13,19 +13,21 @@
 #include "config.h"
 #include "dllinterface.h"
 
+const String	 BoCA::ConfigureFAAC::ConfigID = "FAAC";
+
 BoCA::ConfigureFAAC::ConfigureFAAC()
 {
-	Config	*config = Config::Get();
+	const Config	*config = Config::Get();
 
-	mpegVersion	= config->GetIntValue("FAAC", "MPEGVersion", 0);
-	bitrate		= config->GetIntValue("FAAC", "Bitrate", 96);
-	allowjs		= config->GetIntValue("FAAC", "AllowJS", True);
-	usetns		= config->GetIntValue("FAAC", "UseTNS", False);
-	setQuality	= config->GetIntValue("FAAC", "SetQuality", True);
-	aacQuality	= config->GetIntValue("FAAC", "AACQuality", 100);
-	allowID3	= config->GetIntValue("FAAC", "AllowID3v2", False);
-	fileFormat	= config->GetIntValue("FAAC", "MP4Container", True);
-	fileExtension	= config->GetIntValue("FAAC", "MP4FileExtension", 0);
+	mpegVersion	= config->GetIntValue(ConfigID, "MPEGVersion", 0);
+	bitrate		= config->GetIntValue(ConfigID, "Bitrate", 96);
+	allowjs		= config->GetIntValue(ConfigID, "AllowJS", True);
+	usetns		= config->GetIntValue(ConfigID, "UseTNS", False);
+	setQuality	= config->GetIntValue(ConfigID, "SetQuality", True);
+	aacQuality	= config->GetIntValue(ConfigID, "AACQuality", 100);
+	allowID3	= config->GetIntValue(ConfigID, "AllowID3v2", False);
+	fileFormat	= config->GetIntValue(ConfigID, "MP4Container", True);
+	fileExtension	= config->GetIntValue(ConfigID, "MP4FileExtension", 0);
 
 	I18n	*i18n = I18n::Get();
 
@@ -144,7 +146,7 @@ BoCA::ConfigureFAAC::ConfigureFAAC()
 
 	text_bandwidth		= new Text(i18n->AddColon(i18n->TranslateString("Maximum AAC frequency bandwidth to use (Hz)")), Point(11, 15));
 
-	edit_bandwidth		= new EditBox(String::FromInt(config->GetIntValue("FAAC", "BandWidth", 22050)), Point(text_bandwidth->GetUnscaledTextWidth() + 19, 12), Size(291 - text_bandwidth->GetUnscaledTextWidth(), 0), 5);
+	edit_bandwidth		= new EditBox(String::FromInt(config->GetIntValue(ConfigID, "BandWidth", 22050)), Point(text_bandwidth->GetUnscaledTextWidth() + 19, 12), Size(291 - text_bandwidth->GetUnscaledTextWidth(), 0), 5);
 	edit_bandwidth->SetFlags(EDB_NUMERIC);
 
 	group_bandwidth->Add(text_bandwidth);
@@ -226,16 +228,16 @@ Int BoCA::ConfigureFAAC::SaveSettings()
 	if (aacQuality <  10) aacQuality =  10;
 	if (aacQuality > 500) aacQuality = 500;
 
-	config->SetIntValue("FAAC", "MPEGVersion", mpegVersion);
-	config->SetIntValue("FAAC", "Bitrate", bitrate);
-	config->SetIntValue("FAAC", "AllowJS", allowjs);
-	config->SetIntValue("FAAC", "UseTNS", usetns);
-	config->SetIntValue("FAAC", "BandWidth", edit_bandwidth->GetText().ToInt());
-	config->SetIntValue("FAAC", "SetQuality", setQuality);
-	config->SetIntValue("FAAC", "AACQuality", aacQuality);
-	config->SetIntValue("FAAC", "AllowID3v2", allowID3);
-	config->SetIntValue("FAAC", "MP4Container", fileFormat);
-	config->SetIntValue("FAAC", "MP4FileExtension", fileExtension);
+	config->SetIntValue(ConfigID, "MPEGVersion", mpegVersion);
+	config->SetIntValue(ConfigID, "Bitrate", bitrate);
+	config->SetIntValue(ConfigID, "AllowJS", allowjs);
+	config->SetIntValue(ConfigID, "UseTNS", usetns);
+	config->SetIntValue(ConfigID, "BandWidth", edit_bandwidth->GetText().ToInt());
+	config->SetIntValue(ConfigID, "SetQuality", setQuality);
+	config->SetIntValue(ConfigID, "AACQuality", aacQuality);
+	config->SetIntValue(ConfigID, "AllowID3v2", allowID3);
+	config->SetIntValue(ConfigID, "MP4Container", fileFormat);
+	config->SetIntValue(ConfigID, "MP4FileExtension", fileExtension);
 
 	return Success();
 }

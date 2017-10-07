@@ -13,6 +13,7 @@
 #include <smooth.h>
 
 #include "worker.h"
+#include "config.h"
 
 BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 {
@@ -23,7 +24,9 @@ BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 
 	threadMain.Connect(&SuperWorker::Run, this);
 
-	Int	 modeID = config->GetIntValue("Speex", "Mode", -1);
+	/* Get Speex mode ID.
+	 */
+	Int	 modeID = config->GetIntValue(ConfigureSpeex::ConfigID, "Mode", -1);
 
 	if (modeID == -1)
 	{
@@ -39,11 +42,11 @@ BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 	 */
 	encoder = ex_speex_encoder_init(ex_speex_lib_get_mode(modeID));
 
-	/* Set options
+	/* Set encoder options.
 	 */
-	spx_int32_t	 vbr = config->GetIntValue("Speex", "VBR", 0);
-	spx_int32_t	 abr = config->GetIntValue("Speex", "ABR", -16) * 1000;
-	spx_int32_t	 complexity = config->GetIntValue("Speex", "Complexity", 3);
+	spx_int32_t	 vbr = config->GetIntValue(ConfigureSpeex::ConfigID, "VBR", 0);
+	spx_int32_t	 abr = config->GetIntValue(ConfigureSpeex::ConfigID, "ABR", -16) * 1000;
+	spx_int32_t	 complexity = config->GetIntValue(ConfigureSpeex::ConfigID, "Complexity", 3);
 
 	ex_speex_encoder_ctl(encoder, SPEEX_SET_VBR, &vbr);
 	ex_speex_encoder_ctl(encoder, SPEEX_SET_COMPLEXITY, &complexity);
@@ -52,8 +55,8 @@ BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 
 	if (vbr)
 	{
-		float		 vbrq = config->GetIntValue("Speex", "VBRQuality", 80) / 10.0;
-		spx_int32_t	 vbrmax = config->GetIntValue("Speex", "VBRMaxBitrate", -48) * 1000;
+		float		 vbrq = config->GetIntValue(ConfigureSpeex::ConfigID, "VBRQuality", 80) / 10.0;
+		spx_int32_t	 vbrmax = config->GetIntValue(ConfigureSpeex::ConfigID, "VBRMaxBitrate", -48) * 1000;
 
 		ex_speex_encoder_ctl(encoder, SPEEX_SET_VBR_QUALITY, &vbrq);
 
@@ -61,9 +64,9 @@ BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 	}
 	else
 	{
-		spx_int32_t	 quality = config->GetIntValue("Speex", "Quality", 8);
-		spx_int32_t	 bitrate = config->GetIntValue("Speex", "Bitrate", -16) * 1000;
-		spx_int32_t	 vad = config->GetIntValue("Speex", "VAD", 0);
+		spx_int32_t	 quality = config->GetIntValue(ConfigureSpeex::ConfigID, "Quality", 8);
+		spx_int32_t	 bitrate = config->GetIntValue(ConfigureSpeex::ConfigID, "Bitrate", -16) * 1000;
+		spx_int32_t	 vad = config->GetIntValue(ConfigureSpeex::ConfigID, "VAD", 0);
 
 		if (quality > 0) ex_speex_encoder_ctl(encoder, SPEEX_SET_QUALITY, &quality);
 		if (bitrate > 0) ex_speex_encoder_ctl(encoder, SPEEX_SET_BITRATE, &bitrate);
@@ -71,14 +74,14 @@ BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 		ex_speex_encoder_ctl(encoder, SPEEX_SET_VAD, &vad);
 	}
 
-	if (vbr || abr > 0 || config->GetIntValue("Speex", "VAD", 0))
+	if (vbr || abr > 0 || config->GetIntValue(ConfigureSpeex::ConfigID, "VAD", 0))
 	{
-		spx_int32_t	 dtx = config->GetIntValue("Speex", "DTX", 0);
+		spx_int32_t	 dtx = config->GetIntValue(ConfigureSpeex::ConfigID, "DTX", 0);
 
 		ex_speex_encoder_ctl(encoder, SPEEX_SET_DTX, &dtx);
 	}
 
-	/* Get frame size
+	/* Get frame size and look-ahead.
 	 */
 	spx_int32_t	 rate = format.rate;
 

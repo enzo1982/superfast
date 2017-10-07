@@ -132,20 +132,34 @@ Bool BoCA::EncoderFAAC::Activate()
 		return False;
 	}
 
+	/* Get configuration.
+	 */
 	const Config	*config = GetConfiguration();
 
-	unsigned long	 samplesSize	= 0;
-	unsigned long	 bufferSize	= 0;
+	Bool	 mp4Container = config->GetIntValue(ConfigureFAAC::ConfigID, "MP4Container", True);
+	Int	 mpegVersion  = config->GetIntValue(ConfigureFAAC::ConfigID, "MPEGVersion", 0);
 
-	faacEncHandle		 handle	 = ex_faacEncOpen(format.rate, format.channels, &samplesSize, &bufferSize);
+	/* Create FAAC encoder.
+	 */
+	unsigned long	 samplesSize = 0;
+	unsigned long	 bufferSize  = 0;
+
+	faacEncHandle	 handle = ex_faacEncOpen(format.rate, format.channels, &samplesSize, &bufferSize);
+
+	/* Set encoder parameters.
+	 */
 	faacEncConfigurationPtr	 fConfig = ex_faacEncGetCurrentConfiguration(handle);
 
-	fConfig->mpegVersion	= config->GetIntValue("FAAC", "MP4Container", True) ? MPEG4 : config->GetIntValue("FAAC", "MPEGVersion", 0);
+	fConfig->mpegVersion	= mp4Container ? MPEG4 : mpegVersion;
 	fConfig->aacObjectType	= LOW;
 
 	ex_faacEncSetConfiguration(handle, fConfig);
 
-	if (config->GetIntValue("FAAC", "MP4Container", True))
+	frameSize = samplesSize / format.channels;
+
+	/* Create MP4 container.
+	 */
+	if (mp4Container)
 	{
 		mp4File	 = ex_MP4CreateEx(Utilities::GetNonUnicodeTempFileName(track.outfile).Append(".out"), 0, 1, 1, NIL, 0, NIL, 0);
 		mp4Track = ex_MP4AddAudioTrack(mp4File, format.rate, MP4_INVALID_DURATION, MP4_MPEG4_AUDIO_TYPE);
@@ -161,13 +175,11 @@ Bool BoCA::EncoderFAAC::Activate()
 		totalSamples = 0;
 	}
 
-	frameSize = samplesSize / format.channels;
-
 	ex_faacEncClose(handle);
 
 	/* Write ID3v2 tag if requested.
 	 */
-	if (!config->GetIntValue("FAAC", "MP4Container", True) && config->GetIntValue("Tags", "EnableID3v2", True) && config->GetIntValue("FAAC", "AllowID3v2", False))
+	if (mp4File == NIL && config->GetIntValue("Tags", "EnableID3v2", True) && config->GetIntValue(ConfigureFAAC::ConfigID, "AllowID3v2", False))
 	{
 		const Info	&info = track.GetInfo();
 
@@ -229,7 +241,7 @@ Bool BoCA::EncoderFAAC::Deactivate()
 
 	/* Finish MP4 writing.
 	 */
-	if (config->GetIntValue("FAAC", "MP4Container", True))
+	if (mp4File != NIL)
 	{
 		/* Write iTunes metadata with gapless information.
 		 */
@@ -309,7 +321,7 @@ Bool BoCA::EncoderFAAC::Deactivate()
 
 	/* Write ID3v1 tag if requested.
 	 */
-	if (!config->GetIntValue("FAAC", "MP4Container", True) && config->GetIntValue("Tags", "EnableID3v1", False))
+	if (mp4File == NIL && config->GetIntValue("Tags", "EnableID3v1", False))
 	{
 		const Info	&info = track.GetInfo();
 
@@ -334,7 +346,7 @@ Bool BoCA::EncoderFAAC::Deactivate()
 
 	/* Update ID3v2 tag with correct chapter marks.
 	 */
-	if (!config->GetIntValue("FAAC", "MP4Container", True) && config->GetIntValue("Tags", "EnableID3v2", True) && config->GetIntValue("FAAC", "AllowID3v2", False))
+	if (mp4File == NIL && config->GetIntValue("Tags", "EnableID3v2", True) && config->GetIntValue(ConfigureFAAC::ConfigID, "AllowID3v2", False))
 	{
 		if (track.tracks.Length() > 0 && config->GetIntValue("Tags", "WriteChapters", True))
 		{
@@ -516,12 +528,12 @@ Bool BoCA::EncoderFAAC::SetOutputFormat(Int n)
 
 	if (n == 0 && mp4v2dll != NIL)
 	{
-		config->SetIntValue("FAAC", "MP4Container", True);
-		config->SetIntValue("FAAC", "MPEGVersion", 0);
+		config->SetIntValue(ConfigureFAAC::ConfigID, "MP4Container", True);
+		config->SetIntValue(ConfigureFAAC::ConfigID, "MPEGVersion", 0);
 	}
 	else
 	{
-		config->SetIntValue("FAAC", "MP4Container", False);
+		config->SetIntValue(ConfigureFAAC::ConfigID, "MP4Container", False);
 	}
 
 	return True;
@@ -531,9 +543,9 @@ String BoCA::EncoderFAAC::GetOutputFileExtension() const
 {
 	const Config	*config = GetConfiguration();
 
-	if (config->GetIntValue("FAAC", "MP4Container", True))
+	if (config->GetIntValue(ConfigureFAAC::ConfigID, "MP4Container", True))
 	{
-		switch (config->GetIntValue("FAAC", "MP4FileExtension", 0))
+		switch (config->GetIntValue(ConfigureFAAC::ConfigID, "MP4FileExtension", 0))
 		{
 			default:
 			case  0: return "m4a";

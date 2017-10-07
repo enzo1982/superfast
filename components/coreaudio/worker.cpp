@@ -13,6 +13,7 @@
 #include <smooth.h>
 
 #include "worker.h"
+#include "config.h"
 
 namespace BoCA
 {
@@ -49,7 +50,7 @@ BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 	 */
 	CA::AudioStreamBasicDescription	 destinationFormat = { 0 };
 
-	destinationFormat.mFormatID	    = config->GetIntValue("CoreAudio", "Codec", 'aac ');
+	destinationFormat.mFormatID	    = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", 'aac ');
 	destinationFormat.mSampleRate	    = GetOutputSampleRate(destinationFormat.mFormatID, format.rate);
 	destinationFormat.mChannelsPerFrame = format.channels;
 
@@ -71,7 +72,7 @@ BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 	{
 		/* Get applicable bitrate values.
 		 */
-		CA::UInt32		 bitrate       = config->GetIntValue("CoreAudio", "Bitrate", 64) * 1000 * format.channels;
+		CA::UInt32		 bitrate       = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Bitrate", 64) * 1000 * format.channels;
 		CA::AudioValueRange	*bitrateValues = new CA::AudioValueRange [size / sizeof(CA::AudioValueRange)];
 
 		CA::AudioConverterGetProperty(converter, CA::kAudioConverterApplicableEncodeBitRates, &size, bitrateValues);

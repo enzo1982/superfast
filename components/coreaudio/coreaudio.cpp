@@ -107,7 +107,7 @@ Bool BoCA::EncoderCoreAudio::IsLossless() const
 {
 	const Config	*config = GetConfiguration();
 
-	if (config->GetIntValue("CoreAudio", "Codec", 'aac ') == 'alac') return True;
+	if (config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatMPEG4AAC) == CA::kAudioFormatAppleLossless) return True;
 
 	return False;
 }
@@ -146,7 +146,7 @@ Bool BoCA::EncoderCoreAudio::Activate()
 	 */
 	CA::AudioStreamBasicDescription	 destinationFormat = { 0 };
 
-	destinationFormat.mFormatID	    = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", 'aac ');
+	destinationFormat.mFormatID	    = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatMPEG4AAC);
 	destinationFormat.mSampleRate	    = SuperWorker::GetOutputSampleRate(destinationFormat.mFormatID, format.rate);
 	destinationFormat.mChannelsPerFrame = format.channels;
 
@@ -305,8 +305,8 @@ Bool BoCA::EncoderCoreAudio::Deactivate()
 		Int	 divider = 1;
 		Int	 extra	 = 0;
 
-		if (config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", 'aac ') == 'aach' ||
-		    config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", 'aac ') == 'aacp') { divider = 2; extra = 480; }
+		if (config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatMPEG4AAC) == CA::kAudioFormatMPEG4AAC_HE ||
+		    config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatMPEG4AAC) == CA::kAudioFormatMPEG4AAC_HE_V2) { divider = 2; extra = 480; }
 
 		CA::AudioFilePacketTableInfo	 pti;
 
@@ -562,8 +562,8 @@ Bool BoCA::EncoderCoreAudio::SetOutputFormat(Int n)
 	if (n != 1) config->SetIntValue(ConfigureCoreAudio::ConfigID, "MP4Container", True);
 	else	    config->SetIntValue(ConfigureCoreAudio::ConfigID, "MP4Container", False);
 
-	if	(n != 2 && config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", 'aac ') == 'alac') config->SetIntValue(ConfigureCoreAudio::ConfigID, "Codec", 'aac ');
-	else if (n == 2)										 config->SetIntValue(ConfigureCoreAudio::ConfigID, "Codec", 'alac');
+	if	(n != 2 && config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatMPEG4AAC) == CA::kAudioFormatAppleLossless) config->SetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatMPEG4AAC);
+	else if (n == 2)															  config->SetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatAppleLossless);
 
 	return True;
 }

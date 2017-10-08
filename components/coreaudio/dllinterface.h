@@ -35,6 +35,18 @@ namespace CA
 #	include <AudioToolbox/AudioFile.h>
 #	include <AudioToolbox/AudioConverter.h>
 #	include <AudioToolbox/AudioFormat.h>
+
+#	ifndef MAC_OS_X_VERSION_10_6
+		const UInt32	 kAudioFormatMPEG4AAC_ELD     = 'aace';
+#	endif
+
+#	ifndef MAC_OS_X_VERSION_10_7
+		const UInt32	 kAudioFormatMPEG4AAC_ELD_SBR = 'aacf';
+#	endif
+
+#	ifndef MAC_OS_X_VERSION_10_8
+		const UInt32	 kAudioFormatMPEG4AAC_ELD_V2  = 'aacg';
+#	endif
 #else
 #	include "CoreAudio/AudioFile.h"
 #	include "CoreAudio/AudioConverter.h"

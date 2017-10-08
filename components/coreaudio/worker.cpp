@@ -50,7 +50,7 @@ BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 	 */
 	CA::AudioStreamBasicDescription	 destinationFormat = { 0 };
 
-	destinationFormat.mFormatID	    = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", 'aac ');
+	destinationFormat.mFormatID	    = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatMPEG4AAC);
 	destinationFormat.mSampleRate	    = GetOutputSampleRate(destinationFormat.mFormatID, format.rate);
 	destinationFormat.mChannelsPerFrame = format.channels;
 

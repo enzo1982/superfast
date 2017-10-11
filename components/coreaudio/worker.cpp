@@ -32,6 +32,11 @@ BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 
 	threadMain.Connect(&SuperWorker::Run, this);
 
+	/* Get configuration.
+	 */
+	Int	 codec = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatMPEG4AAC);
+	Int	 kbps  = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Bitrate", 64);
+
 	/* Fill out source format description.
 	 */
 	CA::AudioStreamBasicDescription	 sourceFormat = { 0 };
@@ -50,7 +55,7 @@ BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 	 */
 	CA::AudioStreamBasicDescription	 destinationFormat = { 0 };
 
-	destinationFormat.mFormatID	    = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatMPEG4AAC);
+	destinationFormat.mFormatID	    = codec;
 	destinationFormat.mSampleRate	    = GetOutputSampleRate(destinationFormat.mFormatID, format.rate);
 	destinationFormat.mChannelsPerFrame = format.channels;
 
@@ -72,7 +77,7 @@ BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 	{
 		/* Get applicable bitrate values.
 		 */
-		CA::UInt32		 bitrate       = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Bitrate", 64) * 1000 * format.channels;
+		CA::UInt32		 bitrate       = kbps * 1000 * format.channels;
 		CA::AudioValueRange	*bitrateValues = new CA::AudioValueRange [size / sizeof(CA::AudioValueRange)];
 
 		CA::AudioConverterGetProperty(converter, CA::kAudioConverterApplicableEncodeBitRates, &size, bitrateValues);

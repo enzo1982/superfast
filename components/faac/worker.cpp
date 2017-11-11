@@ -49,11 +49,11 @@ BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 
 	fConfig->mpegVersion	= mp4Container ? MPEG4 : mpegVersion;
 	fConfig->aacObjectType	= LOW;
-	fConfig->allowMidside	= allowJS;
+	fConfig->jointmode	= allowJS;
 	fConfig->useTns		= useTNS;
 	fConfig->bandWidth	= bandwidth;
 
-	if (mp4Container) fConfig->outputFormat = 0; // Raw AAC frame headers
+	if (mp4Container) fConfig->outputFormat = RAW_STREAM;
 
 	if (setQuality)	fConfig->quantqual = aacQuality;
 	else		fConfig->bitRate   = bitrate * 1000;

@@ -191,7 +191,7 @@ Bool BoCA::EncoderFDKAAC::Activate()
 	 */
 	if (mp4Container)
 	{
-		mp4File		= ex_MP4CreateEx(Utilities::GetNonUnicodeTempFileName(track.outfile).Append(".out"), 0, 1, 1, NIL, 0, NIL, 0);
+		mp4File		= ex_MP4CreateEx(String(track.outfile).Append(".out").ConvertTo("UTF-8"), 0, 1, 1, NIL, 0, NIL, 0);
 		mp4Track	= ex_MP4AddAudioTrack(mp4File, format.rate, MP4_INVALID_DURATION, MP4_MPEG4_AUDIO_TYPE);
 
 		ex_MP4SetAudioProfileLevel(mp4File, 0x0F);
@@ -311,7 +311,7 @@ Bool BoCA::EncoderFDKAAC::Deactivate()
 				if (tagger != NIL)
 				{
 					tagger->SetConfiguration(GetConfiguration());
-					tagger->RenderStreamInfo(Utilities::GetNonUnicodeTempFileName(track.outfile).Append(".out"), track);
+					tagger->RenderStreamInfo(String(track.outfile).Append(".out"), track);
 
 					boca.DeleteComponent(tagger);
 				}
@@ -321,12 +321,12 @@ Bool BoCA::EncoderFDKAAC::Deactivate()
 		{
 			/* Optimize file even when no tags are written.
 			 */
-			ex_MP4Optimize(Utilities::GetNonUnicodeTempFileName(track.outfile).Append(".out"), NIL);
+			ex_MP4Optimize(String(track.outfile).Append(".out").ConvertTo("UTF-8"), NIL);
 		}
 
 		/* Stream contents of created MP4 file to output driver
 		 */
-		InStream		 in(STREAM_FILE, Utilities::GetNonUnicodeTempFileName(track.outfile).Append(".out"), IS_READ);
+		InStream		 in(STREAM_FILE, String(track.outfile).Append(".out"), IS_READ);
 		Buffer<UnsignedByte>	 buffer(1024);
 		Int64			 bytesLeft = in.Size();
 
@@ -341,7 +341,7 @@ Bool BoCA::EncoderFDKAAC::Deactivate()
 
 		in.Close();
 
-		File(Utilities::GetNonUnicodeTempFileName(track.outfile).Append(".out")).Delete();
+		File(String(track.outfile).Append(".out")).Delete();
 	}
 
 	/* Write ID3v1 tag if requested.

@@ -34,8 +34,8 @@ BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 
 	/* Get configuration.
 	 */
-	Int	 codec = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatMPEG4AAC);
-	Int	 kbps  = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Bitrate", 64);
+	CA::UInt32	 codec = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatMPEG4AAC);
+	Int		 kbps  = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Bitrate", 64);
 
 	/* Fill out source format description.
 	 */

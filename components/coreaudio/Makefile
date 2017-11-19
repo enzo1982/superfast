@@ -13,7 +13,11 @@ include $(dir $(firstword $(MAKEFILE_LIST)))/$(BOCA_PATH)/Makefile-options
 OBJECTS	  = config.o coreaudio.o dllinterface.o worker.o
 
 # Enter additional defines here:
-DEFINE	  = -I$(SRCDIR) -Wno-multichar
+DEFINE	  = -Wno-multichar
+
+ifneq ($(BUILD_OSX),True)
+	DEFINE += -I$(SRCDIR)
+endif
 
 ifeq ($(BUILD_WIN32),True)
 	DEFINE += -DUNICODE

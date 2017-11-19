@@ -21,17 +21,6 @@
 namespace CA
 {
 #ifdef __APPLE__
-#	include <CoreServices/CoreServices.h>
-
-	struct AudioClassDescription
-	{
-		OSType	mType;
-		OSType	mSubType;
-		OSType	mManufacturer;
-	};
-
-	typedef struct AudioClassDescription AudioClassDescription;
-
 #	include <AudioToolbox/AudioFile.h>
 #	include <AudioToolbox/AudioConverter.h>
 #	include <AudioToolbox/AudioFormat.h>

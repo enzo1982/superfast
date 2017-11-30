@@ -48,15 +48,13 @@ BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 	faacEncConfigurationPtr	 fConfig = ex_faacEncGetCurrentConfiguration(handle);
 
 	fConfig->mpegVersion	= mp4Container ? MPEG4 : mpegVersion;
+	fConfig->outputFormat	= mp4Container ? RAW_STREAM : ADTS_STREAM;
 	fConfig->aacObjectType	= LOW;
-	fConfig->jointmode	= allowJS;
-	fConfig->useTns		= useTNS;
+	fConfig->quantqual	= setQuality ? aacQuality : 0;
+	fConfig->bitRate	= setQuality ? 0 : bitrate * 1000;
 	fConfig->bandWidth	= bandwidth;
-
-	if (mp4Container) fConfig->outputFormat = RAW_STREAM;
-
-	if (setQuality)	fConfig->quantqual = aacQuality;
-	else		fConfig->bitRate   = bitrate * 1000;
+	fConfig->jointmode	= allowJS ? JOINT_IS : JOINT_NONE;
+	fConfig->useTns		= useTNS;
 
 	if (format.bits ==  8) fConfig->inputFormat = FAAC_INPUT_16BIT;
 	if (format.bits == 16) fConfig->inputFormat = FAAC_INPUT_16BIT;

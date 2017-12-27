@@ -24,44 +24,46 @@ const String &BoCA::EncoderFDKAAC::GetComponentSpecs()
 
 	if (fdkaacdll != NIL)
 	{
-		componentSpecs = "							\
-											\
-		  <?xml version=\"1.0\" encoding=\"UTF-8\"?>				\
-		  <component>								\
-		    <name>Fraunhofer FDK AAC Encoder (SuperFast)</name>			\
-		    <version>1.0</version>						\
-		    <id>superfdkaac-enc</id>						\
-		    <type>encoder</type>						\
-		    <replace>faac-enc</replace>						\
-		    <replace>voaacenc-enc</replace>					\
-											\
+		componentSpecs = "										\
+														\
+		  <?xml version=\"1.0\" encoding=\"UTF-8\"?>							\
+		  <component>											\
+		    <name>Fraunhofer FDK AAC Encoder (SuperFast)</name>						\
+		    <version>1.0</version>									\
+		    <id>superfdkaac-enc</id>									\
+		    <type>encoder</type>									\
+		    <replace>faac-enc</replace>									\
+		    <replace>voaacenc-enc</replace>								\
+														\
 		";
 
 		if (mp4v2dll != NIL)
 		{
-			componentSpecs.Append("						\
-											\
-			    <format>							\
-			      <name>MPEG-4 AAC Files</name>				\
-			      <extension>m4a</extension>				\
-			      <extension>m4b</extension>				\
-			      <extension>m4r</extension>				\
-			      <extension>mp4</extension>				\
-			      <tag id=\"mp4-tag\" mode=\"other\">MP4 Metadata</tag>	\
-			    </format>							\
-											\
+			componentSpecs.Append("									\
+														\
+			    <format>										\
+			      <name>MPEG-4 AAC Files</name>							\
+			      <extension>m4a</extension>							\
+			      <extension>m4b</extension>							\
+			      <extension>m4r</extension>							\
+			      <extension>mp4</extension>							\
+			      <tag id=\"mp4-tag\" mode=\"other\">MP4 Metadata</tag>				\
+			    </format>										\
+														\
 			");
 		}
 
-		componentSpecs.Append("							\
-											\
-		    <format>								\
-		      <name>Raw AAC Files</name>					\
-		      <extension>aac</extension>					\
-		      <tag id=\"id3v2-tag\" mode=\"prepend\">ID3v2</tag>		\
-		    </format>								\
-		  </component>								\
-											\
+		componentSpecs.Append("										\
+														\
+		    <format>											\
+		      <name>Raw AAC Files</name>								\
+		      <extension>aac</extension>								\
+		      <tag id=\"id3v2-tag\" mode=\"prepend\">ID3v2</tag>					\
+		    </format>											\
+		    <input bits=\"16\" channels=\"1-6,8\"							\
+			   rate=\"8000,11025,12000,16000,22050,24000,32000,44100,48000,64000,88200,96000\"/>	\
+		  </component>											\
+														\
 		");
 	}
 
@@ -107,36 +109,12 @@ BoCA::EncoderFDKAAC::~EncoderFDKAAC()
 
 Bool BoCA::EncoderFDKAAC::Activate()
 {
+	const Config	*config = GetConfiguration();
+
 	const Format	&format = track.GetFormat();
-
-	if (format.channels == 7)
-	{
-		errorString = "This encoder does not support 7 channel mode!";
-		errorState  = True;
-
-		return False;
-	}
-
-	if (format.channels > 8)
-	{
-		errorString = "This encoder does not support more than 8 channels!";
-		errorState  = True;
-
-		return False;
-	}
-
-	if (GetSampleRateIndex(format.rate) == -1)
-	{
-		errorString = "Bad sampling rate! The selected sampling rate is not supported.";
-		errorState  = True;
-
-		return False;
-	}
 
 	/* Get configuration.
 	 */
-	const Config	*config = GetConfiguration();
-
 	Bool	 mp4Container = config->GetIntValue(ConfigureFDKAAC::ConfigID, "MP4Container", True);
 	Int	 mpegVersion  = config->GetIntValue(ConfigureFDKAAC::ConfigID, "MPEGVersion", 0);
 	Int	 aacType      = config->GetIntValue(ConfigureFDKAAC::ConfigID, "AACType", AOT_SBR);
@@ -398,25 +376,13 @@ Bool BoCA::EncoderFDKAAC::Deactivate()
 
 Int BoCA::EncoderFDKAAC::WriteData(Buffer<UnsignedByte> &data)
 {
-	static Endianness	 endianness = CPU().GetEndianness();
-
-	/* Convert samples to 16 bit.
+	/* Copy data to samples buffer.
 	 */
-	const Format	&format	 = track.GetFormat();
-	Int		 samples = data.Size() / format.channels / (format.bits / 8);
-	Int		 offset	 = samplesBuffer.Size();
+	Int	 samples = data.Size() / 2;
 
-	samplesBuffer.Resize(samplesBuffer.Size() + samples * format.channels);
+	samplesBuffer.Resize(samplesBuffer.Size() + samples);
 
-	for (Int i = 0; i < samples * format.channels; i++)
-	{
-		if	(format.bits ==  8				) samplesBuffer[offset + i] =	    (				    data [i] - 128) * 256;
-		else if	(format.bits == 16				) samplesBuffer[offset + i] = (int)  ((int16_t *) (unsigned char *) data)[i];
-		else if (format.bits == 32				) samplesBuffer[offset + i] = (int) (((int32_t *) (unsigned char *) data)[i]	    / 65536);
-
-		else if (format.bits == 24 && endianness == EndianLittle) samplesBuffer[offset + i] = (int) ((data[3 * i + 2] << 24 | data[3 * i + 1] << 16 | data[3 * i    ] << 8) / 65536);
-		else if (format.bits == 24 && endianness == EndianBig	) samplesBuffer[offset + i] = (int) ((data[3 * i    ] << 24 | data[3 * i + 1] << 16 | data[3 * i + 2] << 8) / 65536);
-	}
+	memcpy(samplesBuffer + samplesBuffer.Size() - samples, data, data.Size());
 
 	/* Output samples to encoder.
 	 */
@@ -437,7 +403,7 @@ Int BoCA::EncoderFDKAAC::EncodeFrames(Bool flush)
 
 		samplesBuffer.Resize(samplesBuffer.Size() + nullSamples * format.channels);
 
-		memset(((int16_t *) samplesBuffer) + samplesBuffer.Size() - nullSamples * format.channels, 0, sizeof(int16_t) * nullSamples * format.channels);
+		memset(samplesBuffer + samplesBuffer.Size() - nullSamples * format.channels, 0, sizeof(int16_t) * nullSamples * format.channels);
 
 		totalSamples += samplesBuffer.Size() / format.channels - nullSamples;
 	}
@@ -478,7 +444,7 @@ Int BoCA::EncoderFDKAAC::EncodeFrames(Bool flush)
 		if (flush) break;
 	}
 
-	memmove((int16_t *) samplesBuffer, ((int16_t *) samplesBuffer) + framesProcessed * samplesPerFrame, sizeof(int16_t) * (samplesBuffer.Size() - framesProcessed * samplesPerFrame));
+	memmove(samplesBuffer, samplesBuffer + framesProcessed * samplesPerFrame, sizeof(int16_t) * (samplesBuffer.Size() - framesProcessed * samplesPerFrame));
 
 	samplesBuffer.Resize(samplesBuffer.Size() - framesProcessed * samplesPerFrame);
 

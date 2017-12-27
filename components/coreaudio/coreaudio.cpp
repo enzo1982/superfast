@@ -52,6 +52,7 @@ const String &BoCA::EncoderCoreAudio::GetComponentSpecs()
 		    </format>							\
 		    <format>							\
 		      <name>Apple Lossless Files</name>				\
+		      <lossless>true</lossless>					\
 		      <extension>m4a</extension>				\
 		      <extension>m4b</extension>				\
 		      <extension>mp4</extension>				\
@@ -122,20 +123,12 @@ Bool BoCA::EncoderCoreAudio::Activate()
 {
 	static Endianness	 endianness = CPU().GetEndianness();
 
+	const Config	*config = GetConfiguration();
+
 	const Format	&format = track.GetFormat();
-
-	if (format.channels > 8)
-	{
-		errorString = "This encoder does not support more than 8 channels!";
-		errorState  = True;
-
-		return False;
-	}
 
 	/* Get configuration.
 	 */
-	const Config	*config = GetConfiguration();
-
 	CA::UInt32	 codec	      = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatMPEG4AAC);
 	Int		 kbps	      = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Bitrate", 64);
 	Bool		 mp4Container = config->GetIntValue(ConfigureCoreAudio::ConfigID, "MP4Container", True);
@@ -145,8 +138,10 @@ Bool BoCA::EncoderCoreAudio::Activate()
 	CA::AudioStreamBasicDescription	 sourceFormat = { 0 };
 
 	sourceFormat.mFormatID		    = CA::kAudioFormatLinearPCM;
-	sourceFormat.mFormatFlags	    = CA::kLinearPCMFormatFlagIsPacked | (format.bits > 8	  ? CA::kLinearPCMFormatFlagIsSignedInteger : 0) |
-										 (endianness == EndianBig ? CA::kLinearPCMFormatFlagIsBigEndian	    : 0);
+	sourceFormat.mFormatFlags	    = CA::kLinearPCMFormatFlagIsPacked;
+	sourceFormat.mFormatFlags	   |= format.fp			? CA::kLinearPCMFormatFlagIsFloat	  : 0;
+	sourceFormat.mFormatFlags	   |= format.sign && !format.fp ? CA::kLinearPCMFormatFlagIsSignedInteger : 0;
+	sourceFormat.mFormatFlags	   |= endianness == EndianBig	? CA::kLinearPCMFormatFlagIsBigEndian     : 0;
 	sourceFormat.mSampleRate	    = format.rate;
 	sourceFormat.mChannelsPerFrame	    = format.channels;
 	sourceFormat.mBitsPerChannel	    = format.bits;

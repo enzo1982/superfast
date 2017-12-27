@@ -25,9 +25,6 @@ namespace BoCA
 
 			Array<SuperWorker *>	 workers;
 
-			AS::DSPComponent	*resampler;
-			Config			*resamplerConfig;
-
 			ogg_stream_state	 os;
 			ogg_page		 og;
 			ogg_packet		 op;

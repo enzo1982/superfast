@@ -47,19 +47,15 @@ BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
 	 */
 	faacEncConfigurationPtr	 fConfig = ex_faacEncGetCurrentConfiguration(handle);
 
-	fConfig->mpegVersion	= mp4Container ? MPEG4 : mpegVersion;
+	fConfig->inputFormat	= FAAC_INPUT_16BIT;
 	fConfig->outputFormat	= mp4Container ? RAW_STREAM : ADTS_STREAM;
+	fConfig->mpegVersion	= mp4Container ? MPEG4 : mpegVersion;
 	fConfig->aacObjectType	= LOW;
 	fConfig->quantqual	= setQuality ? aacQuality : 0;
 	fConfig->bitRate	= setQuality ? 0 : bitrate * 1000;
 	fConfig->bandWidth	= bandwidth;
 	fConfig->jointmode	= allowJS ? JOINT_IS : JOINT_NONE;
 	fConfig->useTns		= useTNS;
-
-	if (format.bits ==  8) fConfig->inputFormat = FAAC_INPUT_16BIT;
-	if (format.bits == 16) fConfig->inputFormat = FAAC_INPUT_16BIT;
-	if (format.bits == 24) fConfig->inputFormat = FAAC_INPUT_32BIT;
-	if (format.bits == 32) fConfig->inputFormat = FAAC_INPUT_32BIT;
 
 	ex_faacEncSetConfiguration(handle, fConfig);
 
@@ -86,7 +82,7 @@ Int BoCA::SuperWorker::Run()
 		packetSizes.RemoveAll();
 
 		Int	 framesProcessed = 0;
-		Int	 samplesPerFrame = frameSize * format.channels / (format.bits <= 16 ? 2 : 1);
+		Int	 samplesPerFrame = frameSize * format.channels;
 
 		while (flush || samplesBuffer.Size() - framesProcessed * samplesPerFrame >= samplesPerFrame)
 		{
@@ -94,7 +90,7 @@ Int BoCA::SuperWorker::Run()
 
 			Int	 dataLength = 0;
 
-			if (samplesBuffer.Size() - framesProcessed * samplesPerFrame >= samplesPerFrame) dataLength = ex_faacEncEncode(handle, samplesBuffer + framesProcessed * samplesPerFrame, frameSize * format.channels, packetBuffer + packetBuffer.Size() - maxPacketSize, maxPacketSize);
+			if (samplesBuffer.Size() - framesProcessed * samplesPerFrame >= samplesPerFrame) dataLength = ex_faacEncEncode(handle, (int32_t *) (int16_t *) (samplesBuffer + framesProcessed * samplesPerFrame), samplesPerFrame, packetBuffer + packetBuffer.Size() - maxPacketSize, maxPacketSize);
 			else										 dataLength = ex_faacEncEncode(handle, NULL, 0, packetBuffer + packetBuffer.Size() - maxPacketSize, maxPacketSize);
 
 			if (flush && dataLength == 0) break;
@@ -116,13 +112,13 @@ Int BoCA::SuperWorker::Run()
 	return Success();
 }
 
-Void BoCA::SuperWorker::Encode(const Buffer<int32_t> &buffer, Int offset, Int size, Bool last)
+Void BoCA::SuperWorker::Encode(const Buffer<int16_t> &buffer, Int offset, Int size, Bool last)
 {
 	workerMutex.Lock();
 
 	samplesBuffer.Resize(size);
 
-	memcpy(samplesBuffer, buffer + offset, size * sizeof(int32_t));
+	memcpy(samplesBuffer, buffer + offset, size * sizeof(int16_t));
 
 	workerMutex.Release();
 

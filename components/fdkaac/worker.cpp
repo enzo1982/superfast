@@ -102,7 +102,7 @@ Int BoCA::SuperWorker::Run()
 			 */
 			Void	*inputBuffer	   = (int16_t *) samplesBuffer + framesProcessed * samplesPerFrame;
 			Int	 inputBufferID	   = IN_AUDIO_DATA;
-			Int	 inputBufferSize   = frameSize * format.channels;
+			Int	 inputBufferSize   = samplesPerFrame;
 			Int	 inputElementSize  = 2;
 
 			Void	*outputBuffer	   = (uint8_t *) packetBuffer + packetBuffer.Size() - maxPacketSize;
@@ -132,7 +132,7 @@ Int BoCA::SuperWorker::Run()
 			AACENC_InArgs	 inputInfo   = { 0 };
 			AACENC_OutArgs	 outputInfo  = { 0 };
 
-			inputInfo.numInSamples = frameSize * format.channels;
+			inputInfo.numInSamples = samplesPerFrame;
 
 			Int	 dataLength = 0;
 

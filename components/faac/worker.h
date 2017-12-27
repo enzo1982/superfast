@@ -27,7 +27,7 @@ namespace BoCA
 			Int				 frameSize;
 			Int				 maxPacketSize;
 
-			Buffer<int32_t>			 samplesBuffer;
+			Buffer<int16_t>			 samplesBuffer;
 
 			Buffer<unsigned char>		 packetBuffer;
 			Array<Int>			 packetSizes;
@@ -41,7 +41,7 @@ namespace BoCA
 							 SuperWorker(const Config *, const Format &);
 							~SuperWorker();
 
-			Void				 Encode(const Buffer<int32_t> &, Int, Int, Bool);
+			Void				 Encode(const Buffer<int16_t> &, Int, Int, Bool);
 
 			Int				 Quit();
 

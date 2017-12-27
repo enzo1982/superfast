@@ -26,23 +26,23 @@ const String &BoCA::EncoderOpus::GetComponentSpecs()
 
 	if (oggdll != NIL && opusdll != NIL)
 	{
-		componentSpecs = "							\
-											\
-		  <?xml version=\"1.0\" encoding=\"UTF-8\"?>				\
-		  <component>								\
-		    <name>Opus Audio Encoder %VERSION% (SuperFast)</name>		\
-		    <version>1.0</version>						\
-		    <id>superopus-enc</id>						\
-		    <type>encoder</type>						\
-		    <require>resample-dsp</require>					\
-		    <format>								\
-		      <name>Opus Audio</name>						\
-		      <extension>opus</extension>					\
-		      <extension>oga</extension>					\
-		      <tag id=\"vorbis-tag\" mode=\"other\">Vorbis Comment</tag>	\
-		    </format>								\
-		  </component>								\
-											\
+		componentSpecs = "								\
+												\
+		  <?xml version=\"1.0\" encoding=\"UTF-8\"?>					\
+		  <component>									\
+		    <name>Opus Audio Encoder %VERSION% (SuperFast)</name>			\
+		    <version>1.0</version>							\
+		    <id>superopus-enc</id>							\
+		    <type>encoder</type>							\
+		    <format>									\
+		      <name>Opus Audio</name>							\
+		      <extension>opus</extension>						\
+		      <extension>oga</extension>						\
+		      <tag id=\"vorbis-tag\" mode=\"other\">Vorbis Comment</tag>		\
+		    </format>									\
+		    <input bits=\"16\" channels=\"1-8\" rate=\"8000,12000,16000,24000,48000\"/>	\
+		  </component>									\
+												\
 		";
 
 		componentSpecs.Replace("%VERSION%", String("v").Append(String(ex_opus_get_version_string()).Replace("libopus ", NIL)));
@@ -87,9 +87,6 @@ BoCA::EncoderOpus::EncoderOpus()
 {
 	configLayer	= NIL;
 
-	resampler	= NIL;
-	resamplerConfig	= NIL;
-
 	frameSize	= 0;
 	preSkip		= 0;
 
@@ -117,20 +114,10 @@ Bool BoCA::EncoderOpus::Activate()
 {
 	static Endianness	 endianness = CPU().GetEndianness();
 
-	const Format	&format = track.GetFormat();
-	Info		 info = track.GetInfo();
-
-	if (format.channels > 8)
-	{
-		errorString = "This encoder does not support more than 8 channels!";
-		errorState  = True;
-
-		return False;
-	}
-
-	/* Get configuration.
-	 */
 	const Config	*config = GetConfiguration();
+
+	const Format	&format = track.GetFormat();
+	Info		 info	= track.GetInfo();
 
 	/* Get best sample rate.
 	 */
@@ -139,38 +126,6 @@ Bool BoCA::EncoderOpus::Activate()
 	else if (format.rate <= 16000) sampleRate = 16000;
 	else if (format.rate <= 24000) sampleRate = 24000;
 	else			       sampleRate = 48000;
-
-	/* Create and init resampler component.
-	 */
-	AS::Registry	&boca = AS::Registry::Get();
-
-	resampler = (AS::DSPComponent *) boca.CreateComponentByID("resample-dsp");
-
-	if (resampler == NIL)
-	{
-		errorString = "Could not create resampler component!";
-		errorState  = True;
-
-		return False;
-	}
-
-	resamplerConfig = Config::Copy(config);
-	resamplerConfig->SetIntValue("Resample", "Converter", 2);
-	resamplerConfig->SetIntValue("Resample", "Samplerate", sampleRate);
-
-	resampler->SetConfiguration(resamplerConfig);
-	resampler->SetAudioTrackInfo(track);
-	resampler->Activate();
-
-	if (resampler->GetErrorState() == True)
-	{
-		errorString = resampler->GetErrorString();
-		errorState  = resampler->GetErrorState();
-
-		boca.DeleteComponent(resampler);
-
-		return False;
-	}
 
 	/* Init Ogg stream.
 	 */
@@ -192,7 +147,7 @@ Bool BoCA::EncoderOpus::Activate()
 	if (format.channels <= 2) setup.channel_mapping = 0;
 	else			  setup.channel_mapping = 1;
 
-	/* Create Opus encoder.
+	/* Init Opus encoder.
 	 */
 	int	 error	 = 0;
 	int	 streams = 0;
@@ -298,30 +253,6 @@ Bool BoCA::EncoderOpus::Activate()
 
 Bool BoCA::EncoderOpus::Deactivate()
 {
-	static Endianness	 endianness = CPU().GetEndianness();
-
-	Buffer<UnsignedByte>	 data;
-
-	Int	 size = resampler->Flush(data);
-
-	/* Convert samples to 16 bit.
-	 */
-	const Format	&format	 = track.GetFormat();
-	Int		 samples = size / format.channels / (format.bits / 8);
-	Int		 offset	 = samplesBuffer.Size();
-
-	samplesBuffer.Resize(samplesBuffer.Size() + samples * format.channels);
-
-	for (Int i = 0; i < samples * format.channels; i++)
-	{
-		if	(format.bits ==  8				) samplesBuffer[offset + i] =	    (				  data [i] - 128) * 256;
-		else if (format.bits == 16				) samplesBuffer[offset + i] = (int)  ((short *) (unsigned char *) data)[i];
-		else if (format.bits == 32				) samplesBuffer[offset + i] = (int) (((long *)  (unsigned char *) data)[i]	  / 65536);
-
-		else if (format.bits == 24 && endianness == EndianLittle) samplesBuffer[offset + i] = (int) ((data[3 * i + 2] << 24 | data[3 * i + 1] << 16 | data[3 * i    ] << 8) / 65536);
-		else if (format.bits == 24 && endianness == EndianBig	) samplesBuffer[offset + i] = (int) ((data[3 * i    ] << 24 | data[3 * i + 1] << 16 | data[3 * i + 2] << 8) / 65536);
-	}
-
 	/* Output remaining samples to encoder.
 	 */
 	EncodeFrames(True);
@@ -344,23 +275,11 @@ Bool BoCA::EncoderOpus::Deactivate()
 	 */
 	FixChapterMarks();
 
-	/* Clean up resampler component.
-	 */
-	AS::Registry	&boca = AS::Registry::Get();
-
-	resampler->Deactivate();
-
-	boca.DeleteComponent(resampler);
-
-	Config::Free(resamplerConfig);
-
 	return True;
 }
 
 Int BoCA::EncoderOpus::WriteData(Buffer<UnsignedByte> &data)
 {
-	static Endianness	 endianness = CPU().GetEndianness();
-
 	const Format	&format = track.GetFormat();
 
 	/* Change to Vorbis channel order.
@@ -371,26 +290,13 @@ Int BoCA::EncoderOpus::WriteData(Buffer<UnsignedByte> &data)
 	else if (format.channels == 7) Utilities::ChangeChannelOrder(data, format, Channel::Default_6_1, Channel::Vorbis_6_1);
 	else if (format.channels == 8) Utilities::ChangeChannelOrder(data, format, Channel::Default_7_1, Channel::Vorbis_7_1);
 
-	/* Resample data.
+	/* Copy data to samples buffer.
 	 */
-	Int	 size = resampler->TransformData(data);
+	Int	 samples = data.Size() / 2;
 
-	/* Convert samples to 16 bit.
-	 */
-	Int	 samples = size / format.channels / (format.bits / 8);
-	Int	 offset	 = samplesBuffer.Size();
+	samplesBuffer.Resize(samplesBuffer.Size() + samples);
 
-	samplesBuffer.Resize(samplesBuffer.Size() + samples * format.channels);
-
-	for (Int i = 0; i < samples * format.channels; i++)
-	{
-		if	(format.bits ==  8				) samplesBuffer[offset + i] =	    (				  data [i] - 128) * 256;
-		else if (format.bits == 16				) samplesBuffer[offset + i] = (int)  ((short *) (unsigned char *) data)[i];
-		else if (format.bits == 32				) samplesBuffer[offset + i] = (int) (((long *)  (unsigned char *) data)[i]	  / 65536);
-
-		else if (format.bits == 24 && endianness == EndianLittle) samplesBuffer[offset + i] = (int) ((data[3 * i + 2] << 24 | data[3 * i + 1] << 16 | data[3 * i    ] << 8) / 65536);
-		else if (format.bits == 24 && endianness == EndianBig	) samplesBuffer[offset + i] = (int) ((data[3 * i    ] << 24 | data[3 * i + 1] << 16 | data[3 * i + 2] << 8) / 65536);
-	}
+	memcpy(samplesBuffer + samplesBuffer.Size() - samples, data, data.Size());
 
 	/* Output samples to encoder.
 	 */

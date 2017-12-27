@@ -38,6 +38,7 @@ const String &BoCA::EncoderSpeex::GetComponentSpecs()
 		      <extension>spx</extension>					\
 		      <tag id=\"vorbis-tag\" mode=\"other\">Vorbis Comment</tag>	\
 		    </format>								\
+		    <input bits=\"16\" channels=\"1-2\" rate=\"8000,16000,32000\"/>	\
 		  </component>								\
 											\
 		";
@@ -91,20 +92,10 @@ BoCA::EncoderSpeex::~EncoderSpeex()
 
 Bool BoCA::EncoderSpeex::Activate()
 {
-	const Format	&format = track.GetFormat();
-	const Info	&info = track.GetInfo();
-
-	if (format.channels > 2)
-	{
-		errorString = "This encoder does not support more than 2 channels!";
-		errorState  = True;
-
-		return False;
-	}
-
-	/* Get configuration.
-	 */
 	const Config	*config = GetConfiguration();
+
+	const Format	&format = track.GetFormat();
+	const Info	&info	= track.GetInfo();
 
 	/* Init Ogg stream.
 	 */
@@ -242,25 +233,13 @@ Bool BoCA::EncoderSpeex::Deactivate()
 
 Int BoCA::EncoderSpeex::WriteData(Buffer<UnsignedByte> &data)
 {
-	static Endianness	 endianness = CPU().GetEndianness();
-
-	/* Convert samples to 16 bit.
+	/* Copy data to samples buffer.
 	 */
-	const Format	&format	 = track.GetFormat();
-	Int		 samples = data.Size() / format.channels / (format.bits / 8);
-	Int		 offset	 = samplesBuffer.Size();
+	Int	 samples = data.Size() / 2;
 
-	samplesBuffer.Resize(samplesBuffer.Size() + samples * format.channels);
+	samplesBuffer.Resize(samplesBuffer.Size() + samples);
 
-	for (Int i = 0; i < samples * format.channels; i++)
-	{
-		if	(format.bits ==  8				) samplesBuffer[offset + i] =		    (				  data [i] - 128) * 256;
-		else if (format.bits == 16				) samplesBuffer[offset + i] = (spx_int16_t)  ((short *) (unsigned char *) data)[i];
-		else if (format.bits == 32				) samplesBuffer[offset + i] = (spx_int16_t) (((long *)  (unsigned char *) data)[i]	  / 65536);
-
-		else if (format.bits == 24 && endianness == EndianLittle) samplesBuffer[offset + i] = (spx_int16_t) ((data[3 * i + 2] << 24 | data[3 * i + 1] << 16 | data[3 * i    ] << 8) / 65536);
-		else if (format.bits == 24 && endianness == EndianBig	) samplesBuffer[offset + i] = (spx_int16_t) ((data[3 * i    ] << 24 | data[3 * i + 1] << 16 | data[3 * i + 2] << 8) / 65536);
-	}
+	memcpy(samplesBuffer + samplesBuffer.Size() - samples, data, data.Size());
 
 	/* Output samples to encoder.
 	 */

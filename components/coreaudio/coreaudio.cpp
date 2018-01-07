@@ -316,7 +316,11 @@ Bool BoCA::EncoderCoreAudio::Deactivate()
 	{
 		const Format	&format = track.GetFormat();
 
-		Float	 divider = Float(format.rate) / SuperWorker::GetOutputSampleRate(codec, format.rate);
+		Int	 rate	 = SuperWorker::GetOutputSampleRate(codec, format.rate);
+
+		if (rate == 0) rate = format.rate;
+
+		Float	 divider = Float(format.rate) / rate;
 		Int	 extra	 = 0;
 
 		if (codec == CA::kAudioFormatMPEG4AAC_HE ||

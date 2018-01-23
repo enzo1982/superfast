@@ -1,5 +1,5 @@
  /* BoCA - BonkEnc Component Architecture
-  * Copyright (C) 2007-2017 Robert Kausch <robert.kausch@freac.org>
+  * Copyright (C) 2007-2018 Robert Kausch <robert.kausch@freac.org>
   *
   * This program is free software; you can redistribute it and/or
   * modify it under the terms of the GNU General Public License as
@@ -244,7 +244,7 @@ Int BoCA::ConfigureFAAC::SaveSettings()
 
 Void BoCA::ConfigureFAAC::SetBitrate()
 {
-	edit_bitrate->SetText(String::FromInt(bitrate));
+	if (!edit_bitrate->IsFocussed()) edit_bitrate->SetText(String::FromInt(bitrate));
 }
 
 Void BoCA::ConfigureFAAC::SetBitrateByEditBox()
@@ -254,7 +254,7 @@ Void BoCA::ConfigureFAAC::SetBitrateByEditBox()
 
 Void BoCA::ConfigureFAAC::SetQuality()
 {
-	edit_quality->SetText(String::FromInt(aacQuality));
+	if (!edit_quality->IsFocussed()) edit_quality->SetText(String::FromInt(aacQuality));
 }
 
 Void BoCA::ConfigureFAAC::SetQualityByEditBox()

@@ -1,5 +1,5 @@
  /* BoCA - BonkEnc Component Architecture
-  * Copyright (C) 2007-2017 Robert Kausch <robert.kausch@freac.org>
+  * Copyright (C) 2007-2018 Robert Kausch <robert.kausch@freac.org>
   *
   * This program is free software; you can redistribute it and/or
   * modify it under the terms of the GNU General Public License as
@@ -274,8 +274,11 @@ Void BoCA::ConfigureCoreAudio::SetBitrate()
 {
 	if (bitrates.Length() == 0) return;
 
-	if (bitrates.Length() == 2) edit_bitrate->SetText(String::FromInt(bitrate));
-	else			    edit_bitrate->SetText(String::FromInt(bitrates.GetNth((bitrates.Length() / 2 + bitrate) * 2 + 1)));
+	if (!edit_bitrate->IsFocussed())
+	{
+		if (bitrates.Length() == 2) edit_bitrate->SetText(String::FromInt(bitrate));
+		else			    edit_bitrate->SetText(String::FromInt(bitrates.GetNth((bitrates.Length() / 2 + bitrate) * 2 + 1)));
+	}
 }
 
 Void BoCA::ConfigureCoreAudio::SetBitrateByEditBox()

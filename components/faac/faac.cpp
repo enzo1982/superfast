@@ -1,5 +1,5 @@
  /* BoCA - BonkEnc Component Architecture
-  * Copyright (C) 2007-2017 Robert Kausch <robert.kausch@freac.org>
+  * Copyright (C) 2007-2018 Robert Kausch <robert.kausch@freac.org>
   *
   * This program is free software; you can redistribute it and/or
   * modify it under the terms of the GNU General Public License as
@@ -481,19 +481,6 @@ Int BoCA::EncoderFAAC::ProcessPackets(const Buffer<unsigned char> &packets, cons
 	}
 
 	return dataLength;
-}
-
-Int BoCA::EncoderFAAC::GetSampleRateIndex(Int sampleRate) const
-{
-	Int	 sampleRates[12] = { 96000, 88200, 64000, 48000, 44100, 32000,
-				     24000, 22050, 16000, 12000, 11025,  8000 };
-
-	for (Int i = 0; i < 12; i++)
-	{
-		if (sampleRate == sampleRates[i]) return i;
-	}
-
-	return -1;
 }
 
 Bool BoCA::EncoderFAAC::SetOutputFormat(Int n)

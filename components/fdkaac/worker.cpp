@@ -1,5 +1,5 @@
  /* BoCA - BonkEnc Component Architecture
-  * Copyright (C) 2007-2017 Robert Kausch <robert.kausch@freac.org>
+  * Copyright (C) 2007-2018 Robert Kausch <robert.kausch@freac.org>
   *
   * This program is free software; you can redistribute it and/or
   * modify it under the terms of the GNU General Public License as
@@ -138,9 +138,9 @@ Int BoCA::SuperWorker::Run()
 
 			if (ex_aacEncEncode(handle, &input, &output, &inputInfo, &outputInfo) == AACENC_OK) dataLength = outputInfo.numOutBytes;
 
-			if (flush && dataLength == 0) break;
-
 			packetBuffer.Resize(packetBuffer.Size() - maxPacketSize + dataLength);
+
+			if (flush && dataLength == 0) break;
 
 			packetSizes.Add(dataLength);
 

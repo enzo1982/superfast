@@ -1,5 +1,5 @@
  /* BoCA - BonkEnc Component Architecture
-  * Copyright (C) 2007-2017 Robert Kausch <robert.kausch@freac.org>
+  * Copyright (C) 2007-2018 Robert Kausch <robert.kausch@freac.org>
   *
   * This program is free software; you can redistribute it and/or
   * modify it under the terms of the GNU General Public License as
@@ -90,8 +90,8 @@ BoCA::EncoderOpus::EncoderOpus()
 	frameSize	= 0;
 	preSkip		= 0;
 
-	blockSize	= 128;
-	overlap		= 8;
+	blockSize	= 256;
+	overlap		= 24;
 
 	sampleRate	= 48000;
 
@@ -240,7 +240,7 @@ Bool BoCA::EncoderOpus::Activate()
 	/* Disable overlap if we use only one thread.
 	 */
 	if (numberOfThreads == 1) overlap = 0;
-	else			  overlap = Math::Max(8, (Int) Math::Ceil(8.0 * 960 / frameSize));
+	else			  overlap = Math::Max(24, (Int) Math::Ceil(24.0 * 960 / frameSize));
 
 	/* Start up worker threads.
 	 */

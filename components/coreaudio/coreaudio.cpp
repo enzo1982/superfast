@@ -88,8 +88,8 @@ BoCA::EncoderCoreAudio::EncoderCoreAudio()
 
 	audioFile      = NIL;
 
-	blockSize      = 128;
-	overlap	       = 8;
+	blockSize      = 256;
+	overlap	       = 24;
 
 	nextWorker     = 0;
 
@@ -283,7 +283,7 @@ Bool BoCA::EncoderCoreAudio::Activate()
 	/* Disable overlap if we use only one thread.
 	 */
 	if (numberOfThreads == 1) overlap = 0;
-	else			  overlap = 8;
+	else			  overlap = 24;
 
 	/* Start up worker threads.
 	 */

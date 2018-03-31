@@ -4,7 +4,7 @@ BOCA_PATH = ..
 
 include $(dir $(firstword $(MAKEFILE_LIST)))/$(BOCA_PATH)/Makefile-options
 
-FOLDERS = fdkaac opus speex
+FOLDERS = fdkaac lame opus speex
 
 ifneq ($(BUILD_OSX),True)
 	FOLDERS += faac

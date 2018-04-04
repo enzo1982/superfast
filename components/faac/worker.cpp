@@ -81,17 +81,19 @@ Int BoCA::SuperWorker::Run()
 		packetBuffer.Resize(0);
 		packetSizes.RemoveAll();
 
-		Int	 framesProcessed = 0;
+		Int	 samplesLeft	 = samplesBuffer.Size();
 		Int	 samplesPerFrame = frameSize * format.channels;
 
-		while (flush || samplesBuffer.Size() - framesProcessed * samplesPerFrame >= samplesPerFrame)
+		Int	 framesProcessed = 0;
+
+		while (flush || samplesLeft >= samplesPerFrame)
 		{
 			packetBuffer.Resize(packetBuffer.Size() + maxPacketSize);
 
 			Int	 dataLength = 0;
 
-			if (samplesBuffer.Size() - framesProcessed * samplesPerFrame >= samplesPerFrame) dataLength = ex_faacEncEncode(handle, (int32_t *) (int16_t *) (samplesBuffer + framesProcessed * samplesPerFrame), samplesPerFrame, packetBuffer + packetBuffer.Size() - maxPacketSize, maxPacketSize);
-			else										 dataLength = ex_faacEncEncode(handle, NULL, 0, packetBuffer + packetBuffer.Size() - maxPacketSize, maxPacketSize);
+			if (samplesLeft >= samplesPerFrame) dataLength = ex_faacEncEncode(handle, (int32_t *) (int16_t *) (samplesBuffer + framesProcessed * samplesPerFrame), samplesPerFrame, packetBuffer + packetBuffer.Size() - maxPacketSize, maxPacketSize);
+			else				    dataLength = ex_faacEncEncode(handle, NULL, 0, packetBuffer + packetBuffer.Size() - maxPacketSize, maxPacketSize);
 
 			packetBuffer.Resize(packetBuffer.Size() - maxPacketSize + dataLength);
 
@@ -100,6 +102,7 @@ Int BoCA::SuperWorker::Run()
 			packetSizes.Add(dataLength);
 
 			framesProcessed++;
+			samplesLeft -= samplesPerFrame;
 		}
 
 		samplesBuffer.Resize(0);

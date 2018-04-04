@@ -91,10 +91,12 @@ Int BoCA::SuperWorker::Run()
 		packetBuffer.Resize(0);
 		packetSizes.RemoveAll();
 
-		Int	 framesProcessed = 0;
+		Int	 samplesLeft	 = samplesBuffer.Size();
 		Int	 samplesPerFrame = frameSize * format.channels;
 
-		while (samplesBuffer.Size() - framesProcessed * samplesPerFrame >= samplesPerFrame)
+		Int	 framesProcessed = 0;
+
+		while (samplesLeft >= samplesPerFrame)
 		{
 			packetBuffer.Resize(packetBuffer.Size() + maxPacketSize);
 
@@ -145,6 +147,7 @@ Int BoCA::SuperWorker::Run()
 			packetSizes.Add(dataLength);
 
 			framesProcessed++;
+			samplesLeft -= samplesPerFrame;
 		}
 
 		samplesBuffer.Resize(0);

@@ -1,5 +1,5 @@
  /* BoCA - BonkEnc Component Architecture
-  * Copyright (C) 2007-2017 Robert Kausch <robert.kausch@freac.org>
+  * Copyright (C) 2007-2018 Robert Kausch <robert.kausch@freac.org>
   *
   * This program is free software; you can redistribute it and/or
   * modify it under the terms of the GNU General Public License as
@@ -111,13 +111,16 @@ Int BoCA::SuperWorker::Run()
 		packetBuffer.Resize(0);
 		packetSizes.RemoveAll();
 
+		Int	 samplesLeft	 = samplesBuffer.Size();
+		Int	 samplesPerFrame = frameSize * format.channels;
+
 		Int	 framesProcessed = 0;
 
-		while (samplesBuffer.Size() - framesProcessed * frameSize * format.channels >= frameSize * format.channels)
+		while (samplesLeft >= samplesPerFrame)
 		{
-			if (format.channels == 2) ex_speex_encode_stereo_int(samplesBuffer + framesProcessed * frameSize * format.channels, frameSize, &bits);
+			if (format.channels == 2) ex_speex_encode_stereo_int(samplesBuffer + framesProcessed * samplesPerFrame, frameSize, &bits);
 
-			ex_speex_encode_int(encoder, samplesBuffer + framesProcessed * frameSize * format.channels, &bits);
+			ex_speex_encode_int(encoder, samplesBuffer + framesProcessed * samplesPerFrame, &bits);
 			ex_speex_bits_insert_terminator(&bits);
 
 			Int	 dataLength = ex_speex_bits_nbytes(&bits);
@@ -131,6 +134,7 @@ Int BoCA::SuperWorker::Run()
 			packetSizes.Add(dataLength);
 
 			framesProcessed++;
+			samplesLeft -= samplesPerFrame;
 		}
 
 		samplesBuffer.Resize(0);

@@ -1,5 +1,5 @@
  /* BoCA - BonkEnc Component Architecture
-  * Copyright (C) 2007-2017 Robert Kausch <robert.kausch@freac.org>
+  * Copyright (C) 2007-2018 Robert Kausch <robert.kausch@freac.org>
   *
   * This program is free software; you can redistribute it and/or
   * modify it under the terms of the GNU General Public License as
@@ -81,19 +81,23 @@ Int BoCA::SuperWorker::Run()
 		packetBuffer.Resize(0);
 		packetSizes.RemoveAll();
 
+		Int	 samplesLeft	 = samplesBuffer.Size();
+		Int	 samplesPerFrame = frameSize * format.channels;
+
 		Int	 framesProcessed = 0;
 
-		while (samplesBuffer.Size() - framesProcessed * frameSize * format.channels >= frameSize * format.channels)
+		while (samplesLeft >= samplesPerFrame)
 		{
 			packetBuffer.Resize(packetBuffer.Size() + maxPacketSize);
 
-			Int	 dataLength = ex_opus_multistream_encode(encoder, samplesBuffer + framesProcessed * frameSize * format.channels, frameSize, packetBuffer + packetBuffer.Size() - maxPacketSize, maxPacketSize);
+			Int	 dataLength = ex_opus_multistream_encode(encoder, samplesBuffer + framesProcessed * samplesPerFrame, frameSize, packetBuffer + packetBuffer.Size() - maxPacketSize, maxPacketSize);
 
 			packetBuffer.Resize(packetBuffer.Size() - maxPacketSize + dataLength);
 
 			packetSizes.Add(dataLength);
 
 			framesProcessed++;
+			samplesLeft -= samplesPerFrame;
 		}
 
 		samplesBuffer.Resize(0);

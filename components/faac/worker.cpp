@@ -92,12 +92,12 @@ Int BoCA::SuperWorker::Run()
 
 			Int	 dataLength = 0;
 
-			if (samplesLeft >= samplesPerFrame) dataLength = ex_faacEncEncode(handle, (int32_t *) (int16_t *) (samplesBuffer + framesProcessed * samplesPerFrame), samplesPerFrame, packetBuffer + packetBuffer.Size() - maxPacketSize, maxPacketSize);
-			else				    dataLength = ex_faacEncEncode(handle, NULL, 0, packetBuffer + packetBuffer.Size() - maxPacketSize, maxPacketSize);
+			if (samplesLeft > 0) dataLength = ex_faacEncEncode(handle, (int32_t *) (int16_t *) (samplesBuffer + framesProcessed * samplesPerFrame), Math::Min(samplesLeft, samplesPerFrame), packetBuffer + packetBuffer.Size() - maxPacketSize, maxPacketSize);
+			else		     dataLength = ex_faacEncEncode(handle, NULL,									0,					 packetBuffer + packetBuffer.Size() - maxPacketSize, maxPacketSize);
 
 			packetBuffer.Resize(packetBuffer.Size() - maxPacketSize + dataLength);
 
-			if (flush && dataLength == 0) break;
+			if (samplesLeft < 0 && dataLength == 0) break;
 
 			if (dataLength > 0) packetSizes.Add(dataLength);
 

@@ -206,11 +206,11 @@ Int BoCA::SuperWorker::Run()
 
 			Int	 dataLength = 0;
 
-			if (samplesLeft >= samplesPerFrame)
+			if (samplesLeft > 0)
 			{
-				if (format.channels == 2) dataLength = ex_lame_encode_buffer_interleaved(context, samplesBuffer + framesProcessed * samplesPerFrame, frameSize, packetBuffer + packetBuffer.Size() - maxPacketSize, maxPacketSize);
+				if (format.channels == 2) dataLength = ex_lame_encode_buffer_interleaved(context, samplesBuffer + framesProcessed * samplesPerFrame, Math::Min(samplesLeft / 2, frameSize), packetBuffer + packetBuffer.Size() - maxPacketSize, maxPacketSize);
 				else			  dataLength = ex_lame_encode_buffer(		 context, samplesBuffer,
-														  samplesBuffer + framesProcessed * samplesPerFrame, frameSize, packetBuffer + packetBuffer.Size() - maxPacketSize, maxPacketSize);
+														  samplesBuffer + framesProcessed * samplesPerFrame, Math::Min(samplesLeft,	frameSize), packetBuffer + packetBuffer.Size() - maxPacketSize, maxPacketSize);
 			}
 			else
 			{
@@ -219,7 +219,7 @@ Int BoCA::SuperWorker::Run()
 
 			packetBuffer.Resize(packetBuffer.Size() - maxPacketSize + dataLength);
 
-			if (flush && dataLength == 0) break;
+			if (samplesLeft < 0 && dataLength == 0) break;
 
 			if (dataLength > 0) packetSizes.Add(dataLength);
 

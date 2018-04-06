@@ -96,7 +96,7 @@ Int BoCA::SuperWorker::Run()
 
 		Int	 framesProcessed = 0;
 
-		while (samplesLeft >= samplesPerFrame)
+		while (flush || samplesLeft >= samplesPerFrame)
 		{
 			packetBuffer.Resize(packetBuffer.Size() + maxPacketSize);
 
@@ -134,7 +134,8 @@ Int BoCA::SuperWorker::Run()
 			AACENC_InArgs	 inputInfo   = { 0 };
 			AACENC_OutArgs	 outputInfo  = { 0 };
 
-			inputInfo.numInSamples = samplesPerFrame;
+			if (samplesLeft > 0) inputInfo.numInSamples = Math::Min(samplesLeft, samplesPerFrame);
+			else		     inputInfo.numInSamples = -1;
 
 			Int	 dataLength = 0;
 
@@ -142,7 +143,7 @@ Int BoCA::SuperWorker::Run()
 
 			packetBuffer.Resize(packetBuffer.Size() - maxPacketSize + dataLength);
 
-			if (flush && dataLength == 0) break;
+			if (samplesLeft < 0 && dataLength == 0) break;
 
 			if (dataLength > 0) packetSizes.Add(dataLength);
 

@@ -386,17 +386,6 @@ Int BoCA::EncoderFAAC::EncodeFrames(Bool flush)
 {
 	const Format	&format = track.GetFormat();
 
-	/* Pad end of stream with empty samples.
-	 */
-	if (flush && samplesBuffer.Size() > 0)
-	{
-		Int	 nullSamples = frameSize - (samplesBuffer.Size() / format.channels) % frameSize;
-
-		samplesBuffer.Resize(samplesBuffer.Size() + nullSamples * format.channels);
-
-		memset(samplesBuffer + samplesBuffer.Size() - nullSamples * format.channels, 0, sizeof(int16_t) * nullSamples * format.channels);
-	}
-
 	/* Pass samples to workers.
 	 */
 	Int	 framesToProcess = blockSize;
@@ -421,7 +410,7 @@ Int BoCA::EncoderFAAC::EncodeFrames(Bool flush)
 
 		/* Pass new frames to worker.
 		 */
-		workerToUse->Encode(samplesBuffer, framesProcessed * samplesPerFrame, samplesPerFrame * framesToProcess, flush);
+		workerToUse->Encode(samplesBuffer, framesProcessed * samplesPerFrame, flush ? samplesBuffer.Size() : samplesPerFrame * framesToProcess, flush);
 		workerToUse->Release();
 
 		framesProcessed += framesToProcess - overlap;

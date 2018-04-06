@@ -26,12 +26,12 @@ namespace BoCA
 						       { 22050, 24000, 16000, 0 },   // MPEG 2
 						       { 44100, 48000, 32000, 0 } }; // MPEG 1
 
-	static Int GetMode(UnsignedByte *frame)
+	static Int GetMode(const UnsignedByte *frame)
 	{
 		return (frame[1] >> 3) & 0x03;
 	}
 
-	static Int GetBitrateIndex(UnsignedByte *frame)
+	static Int GetBitrateIndex(const UnsignedByte *frame)
 	{
 		return frame[2] >> 4;
 	}
@@ -41,12 +41,12 @@ namespace BoCA
 		frame[2] = (brindex << 4) | (frame[2] & 0x0F);
 	}
 
-	static Int GetSampleRateIndex(UnsignedByte *frame)
+	static Int GetSampleRateIndex(const UnsignedByte *frame)
 	{
 		return (frame[2] >> 2) & 0x03;
 	}
 
-	static Bool GetPadding(UnsignedByte *frame)
+	static Bool GetPadding(const UnsignedByte *frame)
 	{
 		return (frame[2] >> 1) & 0x01;
 	}
@@ -56,7 +56,7 @@ namespace BoCA
 		frame[2] = (padding ? 0x02 : 0x00) | (frame[2] & 0xFD);
 	}
 
-	static Int GetFrameSize(UnsignedByte *frame)
+	static Int GetFrameSize(const UnsignedByte *frame)
 	{
 		Int	 mode	 = GetMode(frame);
 		Int	 brindex = GetBitrateIndex(frame);
@@ -70,13 +70,13 @@ namespace BoCA
 		return (mode == 3 ? 144 : 72) * bitrate / srate + padding;
 	}
 
-	static Int GetSideInfoLength(UnsignedByte *frame)
+	static Int GetSideInfoLength(const UnsignedByte *frame)
 	{
 		return GetMode(frame) == 3 ? ((frame[3] >> 6) == 0x03 ? 17 : 32) :
 					     ((frame[3] >> 6) == 0x03 ?  9 : 17);
 	}
 
-	static Int GetMainDataOffset(UnsignedByte *frame)
+	static Int GetMainDataOffset(const UnsignedByte *frame)
 	{
 		return GetMode(frame) == 3 ? (frame[4] << 1) | (frame[5] >> 7) :
 					      frame[4];
@@ -95,7 +95,7 @@ namespace BoCA
 		}
 	}
 
-	static Int GetMainDataLength(UnsignedByte *frame)
+	static Int GetMainDataLength(const UnsignedByte *frame)
 	{
 		Int	 bits = 0;
 
@@ -130,7 +130,7 @@ namespace BoCA
 		return Math::Ceil(Float(bits) / 8);
 	}
 
-	static Bool IsValidFrame(UnsignedByte *frame)
+	static Bool IsValidFrame(const UnsignedByte *frame)
 	{
 		if (((frame[0] << 3) | (frame[1] >> 5)) != 0x07FF) return False;
 

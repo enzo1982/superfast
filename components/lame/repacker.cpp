@@ -14,7 +14,7 @@
 
 #include "repacker.h"
 
-/* ToDo: Add support for CBR, rate limiting, Xing header TOC, Xing header CRC, frame CRC.
+/* ToDo: Add support for CBR, rate limiting, Xing header TOC, Xing header music CRC, frame CRC.
  */
 namespace BoCA
 {
@@ -164,7 +164,7 @@ BoCA::SuperRepacker::~SuperRepacker()
 
 Bool BoCA::SuperRepacker::UpdateInfoTag(Buffer<UnsignedByte> &frame, Int64 totalSamples) const
 {
-	UnsignedByte	*tag = frame + GetSideInfoLength(frame) + 4;
+	UnsignedByte	*tag = frame + 4 + GetSideInfoLength(frame);
 
 	/* Remove TOC flag.
 	 */
@@ -202,6 +202,13 @@ Bool BoCA::SuperRepacker::UpdateInfoTag(Buffer<UnsignedByte> &frame, Int64 total
 	tag[0x95] = (bytes  >> 16) & 0xFF;
 	tag[0x96] = (bytes  >>  8) & 0xFF;
 	tag[0x97] =  bytes 	   & 0xFF;
+
+	/* Set info CRC.
+	 */
+	UnsignedInt16	 crc = Hash::CRC16::Compute(frame, 0x9A + 4 + GetSideInfoLength(frame));
+
+	tag[0x9A] = crc >> 8;
+	tag[0x9B] = crc	     & 0xFF;
 
 	return True;
 }

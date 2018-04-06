@@ -131,7 +131,7 @@ Int BoCA::SuperWorker::Run()
 
 			ex_speex_bits_reset(&bits);
 
-			packetSizes.Add(dataLength);
+			if (dataLength > 0) packetSizes.Add(dataLength);
 
 			framesProcessed++;
 			samplesLeft -= samplesPerFrame;

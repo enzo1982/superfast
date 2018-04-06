@@ -99,7 +99,7 @@ Int BoCA::SuperWorker::Run()
 
 			if (flush && dataLength == 0) break;
 
-			packetSizes.Add(dataLength);
+			if (dataLength > 0) packetSizes.Add(dataLength);
 
 			framesProcessed++;
 			samplesLeft -= samplesPerFrame;

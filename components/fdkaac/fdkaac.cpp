@@ -376,6 +376,8 @@ Bool BoCA::EncoderFDKAAC::Deactivate()
 
 Int BoCA::EncoderFDKAAC::WriteData(Buffer<UnsignedByte> &data)
 {
+	const Format	&format = track.GetFormat();
+
 	/* Copy data to samples buffer.
 	 */
 	Int	 samples = data.Size() / 2;
@@ -386,6 +388,8 @@ Int BoCA::EncoderFDKAAC::WriteData(Buffer<UnsignedByte> &data)
 
 	/* Output samples to encoder.
 	 */
+	totalSamples += data.Size() / format.channels / (format.bits / 8);
+
 	return EncodeFrames(False);
 }
 
@@ -404,8 +408,6 @@ Int BoCA::EncoderFDKAAC::EncodeFrames(Bool flush)
 		samplesBuffer.Resize(samplesBuffer.Size() + nullSamples * format.channels);
 
 		memset(samplesBuffer + samplesBuffer.Size() - nullSamples * format.channels, 0, sizeof(int16_t) * nullSamples * format.channels);
-
-		totalSamples += samplesBuffer.Size() / format.channels - nullSamples;
 	}
 
 	/* Pass samples to workers.
@@ -434,8 +436,6 @@ Int BoCA::EncoderFDKAAC::EncodeFrames(Bool flush)
 		 */
 		workerToUse->Encode(samplesBuffer, framesProcessed * samplesPerFrame, samplesPerFrame * framesToProcess, flush);
 		workerToUse->Release();
-
-		if (!flush) totalSamples += frameSize * (framesToProcess - overlap);
 
 		framesProcessed += framesToProcess - overlap;
 

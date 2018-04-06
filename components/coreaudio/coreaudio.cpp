@@ -464,13 +464,13 @@ Int BoCA::EncoderCoreAudio::WriteData(Buffer<UnsignedByte> &data)
 	else if (format.channels == 7) Utilities::ChangeChannelOrder(data, format, Channel::Default_6_1, Channel::AAC_6_1);
 	else if (format.channels == 8) Utilities::ChangeChannelOrder(data, format, Channel::Default_7_1, Channel::AAC_7_1);
 
-	/* Configure buffer.
+	/* Copy data to samples buffer.
 	 */
 	samplesBuffer.Resize(samplesBuffer.Size() + data.Size());
 
 	memcpy(samplesBuffer + samplesBuffer.Size() - data.Size(), data, data.Size());
 
-	/* Convert frames.
+	/* Output samples to encoder.
 	 */
 	totalSamples += data.Size() / format.channels / (format.bits / 8);
 

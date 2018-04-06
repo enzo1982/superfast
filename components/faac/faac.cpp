@@ -377,6 +377,8 @@ Int BoCA::EncoderFAAC::WriteData(Buffer<UnsignedByte> &data)
 
 	/* Output samples to encoder.
 	 */
+	totalSamples += data.Size() / format.channels / (format.bits / 8);
+
 	return EncodeFrames(False);
 }
 
@@ -393,8 +395,6 @@ Int BoCA::EncoderFAAC::EncodeFrames(Bool flush)
 		samplesBuffer.Resize(samplesBuffer.Size() + nullSamples * format.channels);
 
 		memset(samplesBuffer + samplesBuffer.Size() - nullSamples * format.channels, 0, sizeof(int16_t) * nullSamples * format.channels);
-
-		totalSamples += samplesBuffer.Size() / format.channels - nullSamples;
 	}
 
 	/* Pass samples to workers.
@@ -423,8 +423,6 @@ Int BoCA::EncoderFAAC::EncodeFrames(Bool flush)
 		 */
 		workerToUse->Encode(samplesBuffer, framesProcessed * samplesPerFrame, samplesPerFrame * framesToProcess, flush);
 		workerToUse->Release();
-
-		if (!flush) totalSamples += frameSize * (framesToProcess - overlap);
 
 		framesProcessed += framesToProcess - overlap;
 

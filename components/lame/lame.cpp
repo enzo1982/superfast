@@ -315,14 +315,14 @@ Int BoCA::EncoderLAME::WriteData(Buffer<UnsignedByte> &data)
 	 */
 	Int	 samples = data.Size() / 2;
 
-	totalSamples += samples / format.channels;
-
 	samplesBuffer.Resize(samplesBuffer.Size() + samples);
 
 	memcpy(samplesBuffer + samplesBuffer.Size() - samples, data, data.Size());
 
 	/* Output samples to encoder.
 	 */
+	totalSamples += data.Size() / format.channels / (format.bits / 8);
+
 	return EncodeFrames(False);
 }
 

@@ -219,7 +219,7 @@ Bool BoCA::EncoderLAME::Activate()
 
 	/* Start up worker threads.
 	 */
-	for (Int i = 0; i < numberOfThreads; i++) workers.Add(new SuperWorker(config, format));
+	for (Int i = 0; i < numberOfThreads; i++) workers.Add(new SuperWorker(config, format, overlap));
 
 	foreach (SuperWorker *worker, workers) worker->Start();
 
@@ -245,7 +245,7 @@ Bool BoCA::EncoderLAME::Deactivate()
 
 	workers.GetFirst()->GetInfoTag(buffer);
 
-	repacker->UpdateInfoTag(buffer, totalSamples);
+	if (workers.Length() > 1) repacker->UpdateInfoTag(buffer, totalSamples);
 
 	driver->Seek(dataOffset);
 	driver->WriteData(buffer, buffer.Size());
@@ -398,6 +398,8 @@ Int BoCA::EncoderLAME::EncodeFrames(Bool flush)
 
 Int BoCA::EncoderLAME::ProcessPackets(const Buffer<unsigned char> &data, const Array<Int> &chunkSizes, Bool first)
 {
+	if (workers.Length() == 1) return driver->WriteData(data, data.Size());
+
 	Buffer<UnsignedByte>	 packets;
 	Array<Int>		 packetSizes;
 

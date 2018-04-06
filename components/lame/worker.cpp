@@ -15,13 +15,15 @@
 #include "worker.h"
 #include "config.h"
 
-BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat)
+BoCA::SuperWorker::SuperWorker(const Config *config, const Format &iFormat, Int iOverlap)
 {
 	process	= False;
 	flush	= False;
 	quit	= False;
 
 	format	= iFormat;
+
+	overlap	= iOverlap;
 
 	threadMain.Connect(&SuperWorker::Run, this);
 
@@ -214,7 +216,7 @@ Int BoCA::SuperWorker::Run()
 			}
 			else
 			{
-				 dataLength = ex_lame_encode_flush(context, packetBuffer + packetBuffer.Size() - maxPacketSize, maxPacketSize);
+				dataLength = ex_lame_encode_flush(context, packetBuffer + packetBuffer.Size() - maxPacketSize, maxPacketSize);
 			}
 
 			packetBuffer.Resize(packetBuffer.Size() - maxPacketSize + dataLength);
@@ -227,13 +229,18 @@ Int BoCA::SuperWorker::Run()
 			samplesLeft -= samplesPerFrame;
 		}
 
-		packetBuffer.Resize(packetBuffer.Size() + maxPacketSize);
+		/* Flush at the end of each block in parallel mode.
+		 */
+		if (overlap > 0)
+		{
+			packetBuffer.Resize(packetBuffer.Size() + maxPacketSize);
 
-		Int	 dataLength = ex_lame_encode_flush_nogap(context, packetBuffer + packetBuffer.Size() - maxPacketSize, maxPacketSize);
+			Int	 dataLength = ex_lame_encode_flush_nogap(context, packetBuffer + packetBuffer.Size() - maxPacketSize, maxPacketSize);
 
-		packetBuffer.Resize(packetBuffer.Size() - maxPacketSize + dataLength);
+			packetBuffer.Resize(packetBuffer.Size() - maxPacketSize + dataLength);
 
-		if (dataLength > 0) packetSizes.Add(dataLength);
+			if (dataLength > 0) packetSizes.Add(dataLength);
+		}
 
 		samplesBuffer.Resize(0);
 

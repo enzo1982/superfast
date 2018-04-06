@@ -32,13 +32,15 @@ namespace BoCA
 			Buffer<unsigned char>		 packetBuffer;
 			Array<Int>			 packetSizes;
 
+			Int				 overlap;
+
 			Bool				 process;
 			Bool				 flush;
 			Bool				 quit;
 
 			Int				 Run();
 		public:
-							 SuperWorker(const Config *, const Format &);
+							 SuperWorker(const Config *, const Format &, Int);
 							~SuperWorker();
 
 			Void				 Encode(const Buffer<signed short> &, Int, Int, Bool);

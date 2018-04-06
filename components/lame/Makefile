@@ -8,7 +8,7 @@ VERSION	  = 1.0
 BOCA_PATH = ../..
 
 # Enter object files here:
-OBJECTS	  = config.o dllinterface.o lame.o repacker.o worker.o
+OBJECTS	  = config.o dllinterface.o framecrc.o lame.o repacker.o worker.o
 
 # Enter additional defines here:
 DEFINE	  =

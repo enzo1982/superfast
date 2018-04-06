@@ -13,8 +13,9 @@
 #include <smooth.h>
 
 #include "repacker.h"
+#include "framecrc.h"
 
-/* ToDo: Add support for CBR, rate limiting, Xing header TOC, Xing header music CRC, frame CRC.
+/* ToDo: Add support for CBR, rate limiting, Xing header TOC, Xing header music CRC.
  */
 namespace BoCA
 {
@@ -70,6 +71,13 @@ namespace BoCA
 		return (mode == 3 ? 144 : 72) * bitrate / srate + padding;
 	}
 
+	static Int GetHeaderLength(const UnsignedByte *frame)
+	{
+		if (frame[1] & 0x01) return 4;
+
+		return 6;
+	}
+
 	static Int GetSideInfoLength(const UnsignedByte *frame)
 	{
 		return GetMode(frame) == 3 ? ((frame[3] >> 6) == 0x03 ? 17 : 32) :
@@ -78,52 +86,57 @@ namespace BoCA
 
 	static Int GetMainDataOffset(const UnsignedByte *frame)
 	{
-		return GetMode(frame) == 3 ? (frame[4] << 1) | (frame[5] >> 7) :
-					      frame[4];
+		Int	 hl = GetHeaderLength(frame);
+
+		return GetMode(frame) == 3 ? (frame[hl] << 1) | (frame[hl + 1] >> 7) :
+					      frame[hl];
 	}
 
 	static Void SetMainDataOffset(UnsignedByte*frame, Int offset)
 	{
+		Int	 hl = GetHeaderLength(frame);
+
 		if (GetMode(frame) == 3)
 		{
-			frame[4] = offset >> 1;
-			frame[5] = ((offset & 1) << 7) | (frame[5] & 0x7F);
+			frame[hl    ] = offset >> 1;
+			frame[hl + 1] = ((offset & 1) << 7) | (frame[hl + 1] & 0x7F);
 		}
 		else
 		{
-			frame[4] = offset;
+			frame[hl    ] = offset;
 		}
 	}
 
 	static Int GetMainDataLength(const UnsignedByte *frame)
 	{
+		Int	 hl   = GetHeaderLength(frame);
 		Int	 bits = 0;
 
 		if (GetMode(frame) != 3)
 		{
 			if (GetSideInfoLength(frame) == 9)
 			{
-				bits += ((frame[ 5] & 0x7F) <<  5) | (frame[ 6] >> 3);
+				bits += ((frame[hl +  1] & 0x7F) <<  5) | (frame[hl +  2] >> 3);
 			}
 			else
 			{
-				bits += ((frame[ 5] & 0x3F) <<  6) | (frame[ 6] >> 2);
-				bits += ((frame[13] & 0x7F) <<  5) | (frame[14] >> 3);
+				bits += ((frame[hl +  1] & 0x3F) <<  6) | (frame[hl +  2] >> 2);
+				bits += ((frame[hl +  9] & 0x7F) <<  5) | (frame[hl + 10] >> 3);
 			}
 		}
 		else
 		{
 			if (GetSideInfoLength(frame) == 17)
 			{
-				bits += ((frame[ 6] & 0x3F) <<  6) | (frame[ 7] >> 2)			;
-				bits += ((frame[13] & 0x07) <<  9) | (frame[14] << 1) | (frame[15] >> 7);
+				bits += ((frame[hl +  2] & 0x3F) <<  6) | (frame[hl +  3] >> 2)			       ;
+				bits += ((frame[hl +  9] & 0x07) <<  9) | (frame[hl + 10] << 1) | (frame[hl + 11] >> 7);
 			}
 			else
 			{
-				bits += ((frame[ 6] & 0x0F) <<  8) | (frame[ 7]     )			;
-				bits += ((frame[13] & 0x01) << 11) | (frame[14] << 3) | (frame[15] >> 5);
-				bits += ((frame[21] & 0x3F) <<  6) | (frame[22] >> 2)			;
-				bits += ((frame[28] & 0x07) <<  9) | (frame[29] << 1) | (frame[30] >> 7);
+				bits += ((frame[hl +  2] & 0x0F) <<  8) | (frame[hl +  3]     )			       ;
+				bits += ((frame[hl +  9] & 0x01) << 11) | (frame[hl + 10] << 3) | (frame[hl + 11] >> 5);
+				bits += ((frame[hl + 17] & 0x3F) <<  6) | (frame[hl + 18] >> 2)			       ;
+				bits += ((frame[hl + 24] & 0x07) <<  9) | (frame[hl + 25] << 1) | (frame[hl + 26] >> 7);
 			}
 		}
 
@@ -225,7 +238,7 @@ Bool BoCA::SuperRepacker::UnpackFrames(const Buffer<UnsignedByte> &data, Buffer<
 
 		Int	 frameb	= GetFrameSize(frame);
 
-		Int	 info	= GetSideInfoLength(frame) + 4;
+		Int	 info	= GetHeaderLength(frame) + GetSideInfoLength(frame);
 		Int	 bytes	= GetMainDataLength(frame);
 		Int	 pre	= GetMainDataOffset(frame);
 
@@ -265,7 +278,7 @@ Bool BoCA::SuperRepacker::WriteFrame(UnsignedByte *iframe, Int size)
 
 	memcpy(frame, iframe, size);
 
-	Int	 info  = GetSideInfoLength(frame) + 4;
+	Int	 info  = GetHeaderLength(frame) + GetSideInfoLength(frame);
 	Int	 bytes = GetMainDataLength(frame);
 
 	/* Fill superfluous reservoir with zero bytes.
@@ -344,6 +357,10 @@ Bool BoCA::SuperRepacker::WriteFrame(UnsignedByte *iframe, Int size)
 			driver->WriteData(frame + info + prevRes, reservoir - prevRes);
 		}
 
+		/* Compute frame CRC.
+		 */
+		if (GetHeaderLength(frame) == 6) FrameCRC::Update(frame);
+
 		/* Process frame depending on reservoir size.
 		 */
 		if (bytes >= reservoir)
@@ -387,7 +404,7 @@ Bool BoCA::SuperRepacker::FillReservoir(Int threshold)
 
 	if (frameBuffer.Size() > 0)
 	{
-		Int	 info = GetSideInfoLength(frameBuffer) + 4;
+		Int	 info = GetHeaderLength(frameBuffer) + GetSideInfoLength(frameBuffer);
 
 		for (Int i = 0; i < frameBuffer.Size(); i += info) total += GetFrameSize(frameBuffer + i) - info;
 	}
@@ -407,7 +424,7 @@ Bool BoCA::SuperRepacker::FillReservoir(Int threshold)
 		}
 		else
 		{
-			Int	 info = GetSideInfoLength(frameBuffer) + 4;
+			Int	 info = GetHeaderLength(frameBuffer) + GetSideInfoLength(frameBuffer);
 
 			total	  -= reservoir;
 			reservoir  = GetFrameSize(frameBuffer) - info;
@@ -449,7 +466,7 @@ Bool BoCA::SuperRepacker::IncreaseReservoir(Int bytes)
 
 		Int	 offset	 = driver->GetPos() - frameb;
 
-		Int	 info	 = GetSideInfoLength(frame) + 4;
+		Int	 info	 = GetHeaderLength(frame) + GetSideInfoLength(frame);
 		Int	 pre	 = GetMainDataOffset(frame);
 
 		Int	 maxR	 = GetMode(frame) == 3 ? 511 : 255;
@@ -470,6 +487,10 @@ Bool BoCA::SuperRepacker::IncreaseReservoir(Int bytes)
 
 			if (nframeb - frameb >= bytes)
 			{
+				/* Compute frame CRC.
+				 */
+				if (GetHeaderLength(frame) == 6) FrameCRC::Update(frame);
+
 				/* Write updated frame and update reservoir size.
 				 */
 				driver->Seek(offset);
@@ -497,6 +518,12 @@ Bool BoCA::SuperRepacker::IncreaseReservoir(Int bytes)
 
 		SetMainDataOffset(frame, reservoir);
 
+		/* Compute frame CRC.
+		 */
+		if (GetHeaderLength(frame) == 6) FrameCRC::Update(frame);
+
+		/* Write modified frame.
+		 */
 		driver->WriteData(frame + info, reservoir - pre);
 		driver->WriteData(frame, info);
 		driver->WriteData(frame + info + reservoir - pre, frameb - info - (reservoir - pre) - prevRes);

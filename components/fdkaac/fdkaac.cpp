@@ -208,9 +208,10 @@ Bool BoCA::EncoderFDKAAC::Activate()
 	/* Get number of threads to use.
 	 */
 	Bool	 enableParallel	 = config->GetIntValue("Resources", "EnableParallelConversions", True);
-	Int	 numberOfThreads = enableParallel ? config->GetIntValue("Resources", "NumberOfConversionThreads", 0) : 1;
+	Bool	 enableSuperFast = config->GetIntValue("Resources", "EnableSuperFastMode", False);
+	Int	 numberOfThreads = enableParallel && enableSuperFast ? config->GetIntValue("Resources", "NumberOfConversionThreads", 0) : 1;
 
-	if (enableParallel && numberOfThreads <= 1) numberOfThreads = CPU().GetNumCores() + (CPU().GetNumLogicalCPUs() - CPU().GetNumCores()) / 2;
+	if (enableParallel && enableSuperFast && numberOfThreads <= 1) numberOfThreads = CPU().GetNumCores() + (CPU().GetNumLogicalCPUs() - CPU().GetNumCores()) / 2;
 
 	/* Disable overlap if we use only one thread.
 	 */

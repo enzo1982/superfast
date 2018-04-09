@@ -15,7 +15,7 @@
 #include "repacker.h"
 #include "framecrc.h"
 
-/* ToDo: Add support for CBR, rate limiting, Xing header TOC, Xing header music CRC.
+/* ToDo: Add support for CBR, rate limiting, Xing header TOC.
  */
 namespace BoCA
 {
@@ -216,12 +216,37 @@ Bool BoCA::SuperRepacker::UpdateInfoTag(Buffer<UnsignedByte> &frame, Int64 total
 	tag[0x96] = (bytes  >>  8) & 0xFF;
 	tag[0x97] =  bytes 	   & 0xFF;
 
+	/* Calculate music CRC.
+	 */
+	Hash::CRC16		 hash;
+
+	driver->Seek(offset + GetFrameSize(frame));
+
+	Buffer<UnsignedByte>	 buffer(256 * 1024);
+	Int64			 bytesLeft = driver->GetSize() - driver->GetPos();
+
+	while (bytesLeft)
+	{
+		Int	 bytes = driver->ReadData(buffer, Math::Min(bytesLeft, Int64(256 * 1024)));
+
+		hash.Feed(buffer, bytes);
+
+		bytesLeft -= bytes;
+	}
+
+	/* Set music CRC.
+	 */
+	UnsignedInt16	 musicCRC = hash.Finish();
+
+	tag[0x98] = musicCRC >> 8;
+	tag[0x99] = musicCRC	  & 0xFF;
+
 	/* Set info CRC.
 	 */
-	UnsignedInt16	 crc = Hash::CRC16::Compute(frame, 0x9A + 4 + GetSideInfoLength(frame));
+	UnsignedInt16	 tagCRC	  = Hash::CRC16::Compute(frame, 4 + GetSideInfoLength(frame) + 0x9A);
 
-	tag[0x9A] = crc >> 8;
-	tag[0x9B] = crc	     & 0xFF;
+	tag[0x9A] = tagCRC   >> 8;
+	tag[0x9B] = tagCRC	  & 0xFF;
 
 	return True;
 }

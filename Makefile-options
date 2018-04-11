@@ -1,6 +1,6 @@
 ########## BoCA options makefile ##########
 
-SMOOTHVER = 0.8.73
+SMOOTHVER = 0.8.74
 
 # Find source folder and set vpath
 SRCDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))

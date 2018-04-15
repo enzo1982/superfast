@@ -13,14 +13,13 @@ For technical details on how this is implemented, please refer to [this blog pos
 
 ## Download
 
-Download an experimental fre:ac build with multi-threaded Opus, FAAC* and Core Audio converters**:
-- Windows: [x86-64](https://github.com/enzo1982/superfast/releases/download/v1.0-pre1/freac-1.1-alpha-20170902-superfast-windows-x64.zip), [i686](https://github.com/enzo1982/superfast/releases/download/v1.0-pre1/freac-1.1-alpha-20170902-superfast-windows.zip)
-- macOS: [Universal Binary](https://github.com/enzo1982/superfast/releases/download/v1.0-pre1/freac-1.1-alpha-20170902-superfast-macosx.dmg) (x86-64, i686 and PPC)
-- Linux: [x86-64](https://github.com/enzo1982/superfast/releases/download/v1.0-pre1/freac-1.1-alpha-20170902-superfast-linux-x64.tar.gz), [i686](https://github.com/enzo1982/superfast/releases/download/v1.0-pre1/freac-1.1-alpha-20170902-superfast-linux.tar.gz)
-- FreeBSD: [x86-64](https://github.com/enzo1982/superfast/releases/download/v1.0-pre1/freac-1.1-alpha-20170902-superfast-freebsd-x64.tar.gz), [i686](https://github.com/enzo1982/superfast/releases/download/v1.0-pre1/freac-1.1-alpha-20170902-superfast-freebsd.tar.gz)
+Download an experimental fre:ac build with multi-threaded Opus, FAAC*, FDK-AAC, Core Audio and Speex converters:
+- Windows: [x86-64](https://github.com/enzo1982/superfast/releases/download/v1.0-pre2/freac-1.1-alpha-20180306-superfast-windows-x64.zip), [i686](https://github.com/enzo1982/superfast/releases/download/v1.0-pre2/freac-1.1-alpha-20180306-superfast-windows.zip)
+- macOS: [Universal Binary](https://github.com/enzo1982/superfast/releases/download/v1.0-pre2/freac-1.1-alpha-20180306-superfast-macosx.dmg) (x86-64, i686 and PPC)
+- Linux: [x86-64](https://github.com/enzo1982/superfast/releases/download/v1.0-pre2/freac-1.1-alpha-20180306-superfast-linux-x64.tar.gz), [i686](https://github.com/enzo1982/superfast/releases/download/v1.0-pre2/freac-1.1-alpha-20180306-superfast-linux.tar.gz)
+- FreeBSD: [x86-64](https://github.com/enzo1982/superfast/releases/download/v1.0-pre2/freac-1.1-alpha-20180306-superfast-freebsd-x64.tar.gz), [i686](https://github.com/enzo1982/superfast/releases/download/v1.0-pre2/freac-1.1-alpha-20180306-superfast-freebsd.tar.gz)
 
-\* The FAAC encoder is provided as a fallback when the Core Audio encoder is not available.  
-\** The FDK AAC and Speex encoders will be included in a future update of these packages.
+\* The FAAC encoder is provided as a fallback when neither FDK-AAC nor the Core Audio encoder are available.
 
 ## Repository Contents
 

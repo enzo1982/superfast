@@ -43,6 +43,7 @@ LAME_SET_NOATH			 ex_lame_set_noATH			= NIL;
 LAME_SET_ATHTYPE		 ex_lame_set_ATHtype			= NIL;
 LAME_SET_USETEMPORAL		 ex_lame_set_useTemporal		= NIL;
 LAME_INIT_PARAMS		 ex_lame_init_params			= NIL;
+LAME_GET_OUT_SAMPLERATE		 ex_lame_get_out_samplerate		= NIL;
 LAME_GET_FRAMESIZE		 ex_lame_get_framesize			= NIL;
 LAME_ENCODE_BUFFER		 ex_lame_encode_buffer			= NIL;
 LAME_ENCODE_BUFFER_INTERLEAVED	 ex_lame_encode_buffer_interleaved	= NIL;
@@ -92,6 +93,7 @@ Bool LoadLAMEDLL()
 	ex_lame_set_ATHtype			= (LAME_SET_ATHTYPE) lamedll->GetFunctionAddress("lame_set_ATHtype");
 	ex_lame_set_useTemporal			= (LAME_SET_USETEMPORAL) lamedll->GetFunctionAddress("lame_set_useTemporal");
 	ex_lame_init_params			= (LAME_INIT_PARAMS) lamedll->GetFunctionAddress("lame_init_params");
+	ex_lame_get_out_samplerate		= (LAME_GET_OUT_SAMPLERATE) lamedll->GetFunctionAddress("lame_get_out_samplerate");
 	ex_lame_get_framesize			= (LAME_GET_FRAMESIZE) lamedll->GetFunctionAddress("lame_get_framesize");
 	ex_lame_encode_buffer			= (LAME_ENCODE_BUFFER) lamedll->GetFunctionAddress("lame_encode_buffer");
 	ex_lame_encode_buffer_interleaved	= (LAME_ENCODE_BUFFER_INTERLEAVED) lamedll->GetFunctionAddress("lame_encode_buffer_interleaved");
@@ -129,6 +131,7 @@ Bool LoadLAMEDLL()
 	    ex_lame_set_ATHtype			== NIL ||
 	    ex_lame_set_useTemporal		== NIL ||
 	    ex_lame_init_params			== NIL ||
+	    ex_lame_get_out_samplerate		== NIL ||
 	    ex_lame_get_framesize		== NIL ||
 	    ex_lame_encode_buffer		== NIL ||
 	    ex_lame_encode_buffer_interleaved	== NIL ||

@@ -177,6 +177,8 @@ Bool BoCA::EncoderLAME::Activate()
 		return False;
 	}
 
+	Int	 outSamplerate = ex_lame_get_out_samplerate(context);
+
 	frameSize  = ex_lame_get_framesize(context);
 
 	ex_lame_close(context);
@@ -208,7 +210,7 @@ Bool BoCA::EncoderLAME::Activate()
 	/* Get number of threads to use.
 	 */
 	Bool	 enableParallel	 = config->GetIntValue("Resources", "EnableParallelConversions", True);
-	Bool	 enableSuperFast = config->GetIntValue("Resources", "EnableSuperFastMode", False);
+	Bool	 enableSuperFast = config->GetIntValue("Resources", "EnableSuperFastMode", False) && format.rate == outSamplerate;
 	Int	 numberOfThreads = enableParallel && enableSuperFast ? config->GetIntValue("Resources", "NumberOfConversionThreads", 0) : 1;
 
 	if (enableParallel && enableSuperFast && numberOfThreads <= 1) numberOfThreads = CPU().GetNumCores() + (CPU().GetNumLogicalCPUs() - CPU().GetNumCores()) / 2;

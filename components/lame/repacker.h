@@ -22,6 +22,8 @@ namespace BoCA
 			Int			 offset;
 
 			Int			 frameCount;
+			Int			 cbr;
+
 			Int			 reservoir;
 
 			Buffer<UnsignedByte>	 frameBuffer;
@@ -32,7 +34,7 @@ namespace BoCA
 						 SuperRepacker(IO::Driver *);
 						~SuperRepacker();
 
-			Bool			 UnpackFrames(const Buffer<UnsignedByte> &, Buffer<UnsignedByte> &, Array<Int> &) const;
+			Bool			 UnpackFrames(const Buffer<UnsignedByte> &, Buffer<UnsignedByte> &, Array<Int> &);
 			Bool			 WriteFrame(UnsignedByte *, Int);
 
 			Bool			 Flush();

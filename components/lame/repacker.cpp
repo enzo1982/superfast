@@ -15,7 +15,7 @@
 #include "repacker.h"
 #include "framecrc.h"
 
-/* ToDo: Add support for CBR, rate limiting, Xing header TOC.
+/* ToDo: Add support for rate limiting, Xing header TOC.
  */
 namespace BoCA
 {
@@ -170,6 +170,8 @@ BoCA::SuperRepacker::SuperRepacker(IO::Driver *iDriver)
 	offset	   = driver->GetPos();
 
 	frameCount = 0;
+	cbr	   = -1;
+
 	reservoir  = 0;
 }
 
@@ -255,7 +257,7 @@ Bool BoCA::SuperRepacker::UpdateInfoTag(Buffer<UnsignedByte> &frame, Int64 total
 	return True;
 }
 
-Bool BoCA::SuperRepacker::UnpackFrames(const Buffer<UnsignedByte> &data, Buffer<UnsignedByte> &packets, Array<Int> &packetSizes) const
+Bool BoCA::SuperRepacker::UnpackFrames(const Buffer<UnsignedByte> &data, Buffer<UnsignedByte> &packets, Array<Int> &packetSizes)
 {
 	Buffer<UnsignedByte>	 main;
 
@@ -270,6 +272,9 @@ Bool BoCA::SuperRepacker::UnpackFrames(const Buffer<UnsignedByte> &data, Buffer<
 		Int	 info	= GetHeaderLength(frame) + GetSideInfoLength(frame);
 		Int	 bytes	= GetMainDataLength(frame);
 		Int	 pre	= GetMainDataOffset(frame);
+
+		if	(cbr == -1)				     cbr = GetBitrateIndex(frame);
+		else if (cbr !=  0 && cbr != GetBitrateIndex(frame)) cbr = 0;
 
 		/* Buffer main data.
 		 */
@@ -287,7 +292,7 @@ Bool BoCA::SuperRepacker::UnpackFrames(const Buffer<UnsignedByte> &data, Buffer<
 		memcpy(packets + offset, frame, info);
 		memcpy(packets + offset + info, main + main.Size() - (frameb - info) - pre, bytes);
 
-		SetBitrateIndex(packets + offset, 0);
+		SetBitrateIndex(packets + offset, cbr);
 		SetPadding(packets + offset, False);
 		SetMainDataOffset(packets + offset, 0);
 
@@ -361,13 +366,16 @@ Bool BoCA::SuperRepacker::WriteFrame(UnsignedByte *iFrame, Int size)
 
 		/* Adjust bitrate to stay under maximum reservoir size.
 		 */
-		SetBitrateIndex(frame, 14);
-
-		while (GetFrameSize(frame) - info + total - bytes > maxR)
+		if (!cbr)
 		{
-			if (GetBitrateIndex(frame) == 1) break;
+			SetBitrateIndex(frame, 14);
 
-			SetBitrateIndex(frame, GetBitrateIndex(frame) - 1);
+			while (GetFrameSize(frame) - info + total - bytes > maxR)
+			{
+				if (GetBitrateIndex(frame) == 1) break;
+
+				SetBitrateIndex(frame, GetBitrateIndex(frame) - 1);
+			}
 		}
 
 		if (!GetPadding(frame) && GetFrameSize(frame) - info + total - bytes < maxR) SetPadding(frame, True);

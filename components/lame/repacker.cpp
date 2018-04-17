@@ -19,6 +19,8 @@
  */
 namespace BoCA
 {
+	static const Int	 maxFrameSize	   = 1441;
+
 	static const Int	 bitrates[2][16]   = { { 0,  8000, 16000, 24000, 32000, 40000, 48000, 56000,  64000,  80000,  96000, 112000, 128000, 144000, 160000, 0 },   // MPEG 2/2.5
 						       { 0, 32000, 40000, 48000, 56000, 64000, 80000, 96000, 112000, 128000, 160000, 192000, 224000, 256000, 320000, 0 } }; // MPEG 1
 
@@ -299,7 +301,7 @@ Bool BoCA::SuperRepacker::UnpackFrames(const Buffer<UnsignedByte> &data, Buffer<
 
 Bool BoCA::SuperRepacker::WriteFrame(UnsignedByte *iFrame, Int size)
 {
-	UnsignedByte	 frame[1441] = { 0 };
+	UnsignedByte	 frame[maxFrameSize] = { 0 };
 
 	if (frameCount++ == 0 && memcmp(iFrame + GetHeaderLength(iFrame), frame, GetSideInfoLength(iFrame)) == 0) { driver->WriteData(iFrame, size); return True; }
 
@@ -438,7 +440,7 @@ Bool BoCA::SuperRepacker::FillReservoir(Int threshold)
 
 	/* Fill superfluous reservoir with zero bytes.
 	 */
-	UnsignedByte	zero[1441] = { 0 };
+	UnsignedByte	zero[maxFrameSize] = { 0 };
 
 	while (total > threshold)
 	{
@@ -471,8 +473,6 @@ Bool BoCA::SuperRepacker::FillReservoir(Int threshold)
 
 Bool BoCA::SuperRepacker::IncreaseReservoir(Int bytes)
 {
-	const Int	 maxFrameSize = 1441;
-
 	/* Find last written frame.
 	 */
 	UnsignedByte	data[maxFrameSize];

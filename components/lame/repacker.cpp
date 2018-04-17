@@ -177,6 +177,8 @@ BoCA::SuperRepacker::~SuperRepacker()
 
 Bool BoCA::SuperRepacker::UpdateInfoTag(Buffer<UnsignedByte> &frame, Int64 totalSamples) const
 {
+	if (frame.Size() < 169) return False;
+
 	UnsignedByte	*tag = frame + 4 + GetSideInfoLength(frame);
 
 	/* Remove TOC flag.
@@ -295,13 +297,13 @@ Bool BoCA::SuperRepacker::UnpackFrames(const Buffer<UnsignedByte> &data, Buffer<
 	return True;
 }
 
-Bool BoCA::SuperRepacker::WriteFrame(UnsignedByte *iframe, Int size)
+Bool BoCA::SuperRepacker::WriteFrame(UnsignedByte *iFrame, Int size)
 {
-	if (frameCount++ == 0) { driver->WriteData(iframe, size); return True; }
-
 	UnsignedByte	 frame[1441] = { 0 };
 
-	memcpy(frame, iframe, size);
+	if (frameCount++ == 0 && memcmp(iFrame + GetHeaderLength(iFrame), frame, GetSideInfoLength(iFrame)) == 0) { driver->WriteData(iFrame, size); return True; }
+
+	memcpy(frame, iFrame, size);
 
 	Int	 info  = GetHeaderLength(frame) + GetSideInfoLength(frame);
 	Int	 bytes = GetMainDataLength(frame);

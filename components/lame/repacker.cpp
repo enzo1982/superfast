@@ -15,7 +15,7 @@
 #include "repacker.h"
 #include "framecrc.h"
 
-/* ToDo: Add support for rate limiting, Xing header TOC.
+/* ToDo: Add support for rate limiting.
  */
 namespace BoCA
 {
@@ -185,13 +185,9 @@ Bool BoCA::SuperRepacker::UpdateInfoTag(Buffer<UnsignedByte> &frame, Int64 total
 
 	UnsignedByte	*tag = frame + 4 + GetSideInfoLength(frame);
 
-	/* Remove TOC flag.
+	/* Set frame count (minus this info frame).
 	 */
-	tag[0x07] = tag[0x07] ^ 0x04;
-
-	/* Set frame count.
-	 */
-	Int	 frames = frameCount - 1; // Minus this info frame
+	UnsignedInt32	 frames = frameCount - 1;
 
 	tag[0x08] =  frames >> 24;
 	tag[0x09] = (frames >> 16) & 0xFF;
@@ -200,12 +196,21 @@ Bool BoCA::SuperRepacker::UpdateInfoTag(Buffer<UnsignedByte> &frame, Int64 total
 
 	/* Set byte count.
 	 */
-	Int	 bytes = driver->GetSize() - offset;
+	UnsignedInt32	 bytes = driver->GetSize() - offset;
 
 	tag[0x0C] =  bytes  >> 24;
 	tag[0x0D] = (bytes  >> 16) & 0xFF;
 	tag[0x0E] = (bytes  >>  8) & 0xFF;
 	tag[0x0F] =  bytes 	   & 0xFF;
+
+	/* Write TOC.
+	 */
+	for (Int i = 0; i < 100; i++)
+	{
+		UnsignedInt32	 offset = frameOffsets.GetNth(frameOffsets.Length() * i / 100);
+
+		tag[0x10 + i] = Math::Min(Int64(255), Math::Floor(256.0 * offset / bytes));
+	}
 
 	/* Set pad samples.
 	 */
@@ -344,6 +349,8 @@ Bool BoCA::SuperRepacker::WriteFrame(UnsignedByte *iFrame, Int size)
 
 			/* Write buffered frame header.
 			 */
+			frameOffsets.Add(driver->GetPos() - offset);
+
 			driver->WriteData(frameBuffer, info);
 
 			memmove(frameBuffer, frameBuffer + info, frameBuffer.Size() - info);
@@ -404,6 +411,8 @@ Bool BoCA::SuperRepacker::WriteFrame(UnsignedByte *iFrame, Int size)
 		{
 			/* Write frame.
 			 */
+			frameOffsets.Add(driver->GetPos() - offset);
+
 			driver->WriteData(frame, info);
 			driver->WriteData(frame + info + reservoir, bytes - reservoir);
 

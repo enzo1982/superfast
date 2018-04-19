@@ -28,6 +28,8 @@ namespace BoCA
 
 			Buffer<UnsignedByte>	 frameBuffer;
 
+			Array<UnsignedInt32>	 frameOffsets;
+
 			Bool			 FillReservoir(Int = 0);
 			Bool			 IncreaseReservoir(Int);
 		public:

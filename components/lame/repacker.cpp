@@ -21,7 +21,9 @@ namespace BoCA
 {
 	static const Int	 maxFrameSize	   = 1441;
 
-	static const Int	 bitrates[2][16]   = { { 0,  8000, 16000, 24000, 32000, 40000, 48000, 56000,  64000,  80000,  96000, 112000, 128000, 144000, 160000, 0 },   // MPEG 2/2.5
+	static const Int	 bitrates[4][16]   = { { 0,  8000, 16000, 24000, 32000, 40000, 48000, 56000,  64000,  80000,  96000, 112000, 128000, 144000, 160000, 0 },   // MPEG 2.5
+						       { 0,	0,     0,     0,     0,	    0,	   0,	  0,	  0,	  0,	  0,	  0,	  0,	  0,	  0, 0 },   // reserved
+						       { 0,  8000, 16000, 24000, 32000, 40000, 48000, 56000,  64000,  80000,  96000, 112000, 128000, 144000, 160000, 0 },   // MPEG 2
 						       { 0, 32000, 40000, 48000, 56000, 64000, 80000, 96000, 112000, 128000, 160000, 192000, 224000, 256000, 320000, 0 } }; // MPEG 1
 
 	static const Int	 samplerates[4][4] = { { 11025, 12000,  8000, 0 },   // MPEG 2.5
@@ -65,7 +67,7 @@ namespace BoCA
 		Int	 brindex = GetBitrateIndex(frame);
 		Int	 srindex = GetSampleRateIndex(frame);
 
-		Int	 bitrate = bitrates[mode & 1][brindex];
+		Int	 bitrate = bitrates[mode][brindex];
 		Int	 srate	 = samplerates[mode][srindex];
 
 		Int	 padding = GetPadding(frame);
@@ -170,9 +172,9 @@ BoCA::SuperRepacker::SuperRepacker(IO::Driver *iDriver)
 	offset	   = driver->GetPos();
 
 	frameCount = 0;
-	cbr	   = -1;
-
 	reservoir  = 0;
+
+	cbrIndex   = -1;
 }
 
 BoCA::SuperRepacker::~SuperRepacker()
@@ -278,8 +280,10 @@ Bool BoCA::SuperRepacker::UnpackFrames(const Buffer<UnsignedByte> &data, Buffer<
 		Int	 bytes	= GetMainDataLength(frame);
 		Int	 pre	= GetMainDataOffset(frame);
 
-		if	(cbr == -1)				     cbr = GetBitrateIndex(frame);
-		else if (cbr !=  0 && cbr != GetBitrateIndex(frame)) cbr = 0;
+		/* Set CBR bitrate index.
+		 */
+		if	(cbrIndex == -1)				       cbrIndex = GetBitrateIndex(frame);
+		else if (cbrIndex !=  0 && cbrIndex != GetBitrateIndex(frame)) cbrIndex = 0;
 
 		/* Buffer main data.
 		 */
@@ -297,7 +301,7 @@ Bool BoCA::SuperRepacker::UnpackFrames(const Buffer<UnsignedByte> &data, Buffer<
 		memcpy(packets + offset, frame, info);
 		memcpy(packets + offset + info, main + main.Size() - (frameb - info) - pre, bytes);
 
-		SetBitrateIndex(packets + offset, cbr);
+		SetBitrateIndex(packets + offset, cbrIndex);
 		SetPadding(packets + offset, False);
 		SetMainDataOffset(packets + offset, 0);
 
@@ -373,7 +377,7 @@ Bool BoCA::SuperRepacker::WriteFrame(UnsignedByte *iFrame, Int size)
 
 		/* Adjust bitrate to stay under maximum reservoir size.
 		 */
-		if (!cbr)
+		if (!cbrIndex)
 		{
 			SetBitrateIndex(frame, 14);
 

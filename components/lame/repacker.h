@@ -22,9 +22,9 @@ namespace BoCA
 			Int			 offset;
 
 			Int			 frameCount;
-			Int			 cbr;
-
 			Int			 reservoir;
+
+			Int			 cbrIndex;
 
 			Buffer<UnsignedByte>	 frameBuffer;
 

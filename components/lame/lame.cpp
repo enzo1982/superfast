@@ -230,6 +230,9 @@ Bool BoCA::EncoderLAME::Activate()
 	 */
 	repacker = new SuperRepacker(driver);
 
+	repacker->EnableRateControl(setMinVBRBitrate ? minVBRBitrate * 1000 :	8000,
+				    setMaxVBRBitrate ? maxVBRBitrate * 1000 : 320000);
+
 	return True;
 }
 

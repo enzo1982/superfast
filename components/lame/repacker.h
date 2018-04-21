@@ -26,6 +26,9 @@ namespace BoCA
 
 			Int			 cbrIndex;
 
+			Int			 minIndex;
+			Int			 maxIndex;
+
 			Buffer<UnsignedByte>	 frameBuffer;
 
 			Array<UnsignedInt32>	 frameOffsets;
@@ -35,6 +38,8 @@ namespace BoCA
 		public:
 						 SuperRepacker(IO::Driver *);
 						~SuperRepacker();
+
+			Bool			 EnableRateControl(Int, Int);
 
 			Bool			 UnpackFrames(const Buffer<UnsignedByte> &, Buffer<UnsignedByte> &, Array<Int> &);
 			Bool			 WriteFrame(UnsignedByte *, Int);

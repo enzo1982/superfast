@@ -15,8 +15,6 @@
 #include "repacker.h"
 #include "framecrc.h"
 
-/* ToDo: Add support for rate limiting.
- */
 namespace BoCA
 {
 	static const Int	 maxFrameSize	   = 1441;
@@ -175,10 +173,23 @@ BoCA::SuperRepacker::SuperRepacker(IO::Driver *iDriver)
 	reservoir  = 0;
 
 	cbrIndex   = -1;
+
+	minIndex   = 1;
+	maxIndex   = 14;
 }
 
 BoCA::SuperRepacker::~SuperRepacker()
 {
+}
+
+Bool BoCA::SuperRepacker::EnableRateControl(Int minRate, Int maxRate)
+{
+	if (maxRate < minRate) return False;
+
+	minIndex = -minRate;
+	maxIndex = -maxRate;
+
+	return True;
 }
 
 Bool BoCA::SuperRepacker::UpdateInfoTag(Buffer<UnsignedByte> &frame, Int64 totalSamples) const
@@ -285,6 +296,13 @@ Bool BoCA::SuperRepacker::UnpackFrames(const Buffer<UnsignedByte> &data, Buffer<
 		if	(cbrIndex == -1)				       cbrIndex = GetBitrateIndex(frame);
 		else if (cbrIndex !=  0 && cbrIndex != GetBitrateIndex(frame)) cbrIndex = 0;
 
+		/* Set minimum/maximum VBR bitrate index.
+		 */
+		Int	 mode	= GetMode(frame);
+
+		if (minIndex < 0) for (Int i =	1; i <= 14; i++) if (bitrates[mode][i] >= -minIndex || i == 14) { minIndex = i; break; }
+		if (maxIndex < 0) for (Int i = 14; i >=	 1; i--) if (bitrates[mode][i] <= -maxIndex || i ==  1) { maxIndex = i; break; }
+
 		/* Buffer main data.
 		 */
 		main.Resize(main.Size() + frameb - info);
@@ -379,11 +397,11 @@ Bool BoCA::SuperRepacker::WriteFrame(UnsignedByte *iFrame, Int size)
 		 */
 		if (!cbrIndex)
 		{
-			SetBitrateIndex(frame, 14);
+			SetBitrateIndex(frame, maxIndex);
 
 			while (GetFrameSize(frame) - info + total - bytes > maxR)
 			{
-				if (GetBitrateIndex(frame) == 1) break;
+				if (GetBitrateIndex(frame) == minIndex) break;
 
 				SetBitrateIndex(frame, GetBitrateIndex(frame) - 1);
 			}

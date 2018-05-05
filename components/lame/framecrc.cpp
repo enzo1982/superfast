@@ -13,18 +13,17 @@
 #include "framecrc.h"
 
 UnsignedInt16	 BoCA::FrameCRC::table[256];
-Bool		 BoCA::FrameCRC::initialized = False;
+Bool		 BoCA::FrameCRC::initialized = InitTable();
 
 BoCA::FrameCRC::FrameCRC() : crc(0xFFFF)
 {
-	if (!initialized) InitTable();
 }
 
 BoCA::FrameCRC::~FrameCRC()
 {
 }
 
-Void BoCA::FrameCRC::InitTable()
+Bool BoCA::FrameCRC::InitTable()
 {
 	UnsignedInt16	 polynomial = 0x8005;
 
@@ -37,7 +36,7 @@ Void BoCA::FrameCRC::InitTable()
 		table[i] = value;
 	}
 
-	initialized = True;
+	return True;
 }
 
 Bool BoCA::FrameCRC::Feed(const UnsignedByte *data, Int size)

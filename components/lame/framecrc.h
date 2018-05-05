@@ -27,7 +27,7 @@ namespace BoCA
 
 			UnsignedInt16		 crc;
 
-			static Void		 InitTable();
+			static Bool		 InitTable();
 
 			Bool			 Feed(const UnsignedByte *, Int);
 

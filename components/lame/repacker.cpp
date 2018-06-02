@@ -333,7 +333,7 @@ Bool BoCA::SuperRepacker::UnpackFrames(const Buffer<UnsignedByte> &data, Buffer<
 
 Bool BoCA::SuperRepacker::WriteFrame(UnsignedByte *iFrame, Int size)
 {
-	UnsignedByte	 frame[maxFrameSize] = { 0 };
+	UnsignedByte	 frame[maxFrameSize + 511] = { 0 }; // Frame can exceed maxFrameSize when using reservoir.
 
 	if (frameCount++ == 0 && memcmp(iFrame + GetHeaderLength(iFrame), frame, GetSideInfoLength(iFrame)) == 0) { driver->WriteData(iFrame, size); return True; }
 

@@ -287,7 +287,12 @@ Bool BoCA::EncoderFAAC::Deactivate()
 		{
 			/* Optimize file even when no tags are written.
 			 */
-			ex_MP4Optimize(track.outfile.ConvertTo("UTF-8"), NIL);
+			String	 tempFile = String(track.outfile).Append(".temp");
+
+			ex_MP4Optimize(track.outfile.ConvertTo("UTF-8"), tempFile.ConvertTo("UTF-8"));
+
+			File(track.outfile).Delete();
+			File(tempFile).Move(track.outfile);
 		}
 	}
 

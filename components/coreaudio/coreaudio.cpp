@@ -1,5 +1,5 @@
  /* BoCA - BonkEnc Component Architecture
-  * Copyright (C) 2007-2017 Robert Kausch <robert.kausch@freac.org>
+  * Copyright (C) 2007-2018 Robert Kausch <robert.kausch@freac.org>
   *
   * This program is free software; you can redistribute it and/or
   * modify it under the terms of the GNU General Public License as
@@ -87,6 +87,8 @@ BoCA::EncoderCoreAudio::EncoderCoreAudio()
 	configLayer    = NIL;
 
 	audioFile      = NIL;
+
+	fileType       = 0;
 
 	blockSize      = 256;
 	overlap	       = 24;
@@ -220,7 +222,7 @@ Bool BoCA::EncoderCoreAudio::Activate()
 	CA::CFURLRef	 fileNameURL	= CA::CFURLCreateWithFileSystemPath(NULL, fileNameString, CA::kCFURLPOSIXPathStyle, False);
 #endif
 
-	CA::UInt32	 fileType	= mp4Container ? CA::kAudioFileM4AType : CA::kAudioFileAAC_ADTSType;
+	fileType = mp4Container ? CA::kAudioFileM4AType : CA::kAudioFileAAC_ADTSType;
 
 	CA::AudioFileCreateWithURL(fileNameURL, fileType, &destinationFormat, CA::kAudioFileFlags_EraseFile, &audioFile);
 
@@ -250,7 +252,7 @@ Bool BoCA::EncoderCoreAudio::Activate()
 
 	/* Write ID3v2 tag if requested.
 	 */
-	if (!mp4Container && config->GetIntValue("Tags", "EnableID3v2", True) && config->GetIntValue(ConfigureCoreAudio::ConfigID, "AllowID3v2", False))
+	if (fileType == CA::kAudioFileAAC_ADTSType && config->GetIntValue("Tags", "EnableID3v2", True) && config->GetIntValue(ConfigureCoreAudio::ConfigID, "AllowID3v2", False))
 	{
 		const Info	&info = track.GetInfo();
 
@@ -301,8 +303,7 @@ Bool BoCA::EncoderCoreAudio::Deactivate()
 	 */
 	const Config	*config = GetConfiguration();
 
-	CA::UInt32	 codec	      = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatMPEG4AAC);
-	Bool		 mp4Container = config->GetIntValue(ConfigureCoreAudio::ConfigID, "MP4Container", True);
+	CA::UInt32	 codec  = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatMPEG4AAC);
 
 	/* Convert final frames.
 	 */
@@ -363,7 +364,7 @@ Bool BoCA::EncoderCoreAudio::Deactivate()
 
 	/* Write metadata to file
 	 */
-	if (mp4Container && config->GetIntValue("Tags", "EnableMP4Metadata", True))
+	if (fileType == CA::kAudioFileM4AType && config->GetIntValue("Tags", "EnableMP4Metadata", True))
 	{
 		const Info	&info = track.GetInfo();
 
@@ -403,7 +404,7 @@ Bool BoCA::EncoderCoreAudio::Deactivate()
 
 	/* Write ID3v1 tag if requested.
 	 */
-	if (!mp4Container && config->GetIntValue("Tags", "EnableID3v1", False))
+	if (fileType == CA::kAudioFileAAC_ADTSType && config->GetIntValue("Tags", "EnableID3v1", False))
 	{
 		const Info	&info = track.GetInfo();
 
@@ -428,7 +429,7 @@ Bool BoCA::EncoderCoreAudio::Deactivate()
 
 	/* Update ID3v2 tag with correct chapter marks.
 	 */
-	if (!mp4Container && config->GetIntValue("Tags", "EnableID3v2", True) && config->GetIntValue(ConfigureCoreAudio::ConfigID, "AllowID3v2", False))
+	if (fileType == CA::kAudioFileAAC_ADTSType && config->GetIntValue("Tags", "EnableID3v2", True) && config->GetIntValue(ConfigureCoreAudio::ConfigID, "AllowID3v2", False))
 	{
 		if (track.tracks.Length() > 0 && config->GetIntValue("Tags", "WriteChapters", True))
 		{

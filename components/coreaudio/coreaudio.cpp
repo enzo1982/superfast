@@ -16,14 +16,12 @@
 #include "coreaudio.h"
 #include "config.h"
 
-using namespace smooth::IO;
-
 const String &BoCA::EncoderCoreAudio::GetComponentSpecs()
 {
 	static String	 componentSpecs;
 
 #ifndef __APPLE__
-	if (corefoundationdll != NIL && coreaudiodll != NIL)
+	if (coreaudiodll != NIL)
 #endif
 	{
 		componentSpecs = "						\
@@ -69,7 +67,6 @@ const String &BoCA::EncoderCoreAudio::GetComponentSpecs()
 Void smooth::AttachDLL(Void *instance)
 {
 #ifndef __APPLE__
-	LoadCoreFoundationDLL();
 	LoadCoreAudioDLL();
 #endif
 }
@@ -77,10 +74,17 @@ Void smooth::AttachDLL(Void *instance)
 Void smooth::DetachDLL()
 {
 #ifndef __APPLE__
-	FreeCoreFoundationDLL();
 	FreeCoreAudioDLL();
 #endif
 }
+
+namespace BoCA
+{
+	CA::OSStatus	 AudioFileReadProc(void *, CA::SInt64, CA::UInt32, void *, CA::UInt32 *);
+	CA::OSStatus	 AudioFileWriteProc(void *, CA::SInt64, CA::UInt32, const void *, CA::UInt32 *);
+	CA::SInt64	 AudioFileGetSizeProc(void *);
+	CA::OSStatus	 AudioFileSetSizeProc(void *, CA::SInt64);
+};
 
 BoCA::EncoderCoreAudio::EncoderCoreAudio()
 {
@@ -89,6 +93,8 @@ BoCA::EncoderCoreAudio::EncoderCoreAudio()
 	audioFile      = NIL;
 
 	fileType       = 0;
+
+	dataOffset     = 0;
 
 	blockSize      = 256;
 	overlap	       = 24;
@@ -211,44 +217,9 @@ Bool BoCA::EncoderCoreAudio::Activate()
 		CA::AudioConverterSetProperty(converter, CA::kAudioConverterEncodeBitRate, sizeof(CA::UInt32), &bitrate);
 	}
 
-	/* Create audio file object for output file.
+	/* Get file type of output file.
 	 */
-	String		 fileName	= Utilities::GetNonUnicodeTempFileName(track.outfile).Append(".out");
-	CA::CFStringRef	 fileNameString	= CA::CFStringCreateWithCString(NULL, fileName.ConvertTo("UTF-8"), CA::kCFStringEncodingUTF8);
-
-#ifdef __WIN32__
-	CA::CFURLRef	 fileNameURL	= CA::CFURLCreateWithFileSystemPath(NULL, fileNameString, CA::kCFURLWindowsPathStyle, False);
-#else
-	CA::CFURLRef	 fileNameURL	= CA::CFURLCreateWithFileSystemPath(NULL, fileNameString, CA::kCFURLPOSIXPathStyle, False);
-#endif
-
 	fileType = mp4Container ? CA::kAudioFileM4AType : CA::kAudioFileAAC_ADTSType;
-
-	CA::AudioFileCreateWithURL(fileNameURL, fileType, &destinationFormat, CA::kAudioFileFlags_EraseFile, &audioFile);
-
-	CA::CFRelease(fileNameURL);
-	CA::CFRelease(fileNameString);
-
-	/* Get magic cookie and supply it to audio file.
-	 */
-	CA::UInt32	 cookieSize = 0;
-
-	if (CA::AudioConverterGetPropertyInfo(converter, CA::kAudioConverterCompressionMagicCookie, &cookieSize, NIL) == 0)
-	{
-		unsigned char	*cookie = new unsigned char [cookieSize];
-
-		CA::AudioConverterGetProperty(converter, CA::kAudioConverterCompressionMagicCookie, &cookieSize, cookie);
-		CA::AudioFileSetProperty(audioFile, CA::kAudioFilePropertyMagicCookieData, cookieSize, cookie);
-
-		delete [] cookie;
-	}
-
-	CA::AudioConverterDispose(converter);
-
-	packetsWritten = 0;
-	packetsMissing = 0;
-
-	totalSamples   = 0;
 
 	/* Write ID3v2 tag if requested.
 	 */
@@ -270,10 +241,37 @@ Bool BoCA::EncoderCoreAudio::Activate()
 
 				driver->WriteData(id3Buffer, id3Buffer.Size());
 
+				dataOffset = id3Buffer.Size();
+
 				boca.DeleteComponent(tagger);
 			}
 		}
 	}
+
+	/* Create audio file object for output file.
+	 */
+	CA::AudioFileInitializeWithCallbacks(this, AudioFileReadProc, AudioFileWriteProc, AudioFileGetSizeProc, AudioFileSetSizeProc, fileType, &destinationFormat, 0, &audioFile);
+
+	/* Get magic cookie and supply it to audio file.
+	 */
+	CA::UInt32	 cookieSize = 0;
+
+	if (CA::AudioConverterGetPropertyInfo(converter, CA::kAudioConverterCompressionMagicCookie, &cookieSize, NIL) == 0)
+	{
+		unsigned char	*cookie = new unsigned char [cookieSize];
+
+		CA::AudioConverterGetProperty(converter, CA::kAudioConverterCompressionMagicCookie, &cookieSize, cookie);
+		CA::AudioFileSetProperty(audioFile, CA::kAudioFilePropertyMagicCookieData, cookieSize, cookie);
+
+		delete [] cookie;
+	}
+
+	CA::AudioConverterDispose(converter);
+
+	packetsWritten = 0;
+	packetsMissing = 0;
+
+	totalSamples   = 0;
 
 	/* Get number of threads to use.
 	 */
@@ -303,7 +301,7 @@ Bool BoCA::EncoderCoreAudio::Deactivate()
 	 */
 	const Config	*config = GetConfiguration();
 
-	CA::UInt32	 codec  = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatMPEG4AAC);
+	CA::UInt32	 codec	= config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatMPEG4AAC);
 
 	/* Convert final frames.
 	 */
@@ -366,6 +364,8 @@ Bool BoCA::EncoderCoreAudio::Deactivate()
 	 */
 	if (fileType == CA::kAudioFileM4AType && config->GetIntValue("Tags", "EnableMP4Metadata", True))
 	{
+		driver->Close();
+
 		const Info	&info = track.GetInfo();
 
 		if (info.HasBasicInfo() || (track.tracks.Length() > 0 && config->GetIntValue("Tags", "WriteChapters", True)))
@@ -376,31 +376,12 @@ Bool BoCA::EncoderCoreAudio::Deactivate()
 			if (tagger != NIL)
 			{
 				tagger->SetConfiguration(GetConfiguration());
-				tagger->RenderStreamInfo(Utilities::GetNonUnicodeTempFileName(track.outfile).Append(".out"), track);
+				tagger->RenderStreamInfo(track.outfile, track);
 
 				boca.DeleteComponent(tagger);
 			}
 		}
 	}
-
-	/* Stream contents of created MP4 file to output driver
-	 */
-	InStream		 in(STREAM_FILE, Utilities::GetNonUnicodeTempFileName(track.outfile).Append(".out"), IS_READ);
-	Buffer<UnsignedByte>	 buffer(1024);
-	Int64			 bytesLeft = in.Size();
-
-	while (bytesLeft)
-	{
-		in.InputData(buffer, Math::Min(Int64(1024), bytesLeft));
-
-		driver->WriteData(buffer, Math::Min(Int64(1024), bytesLeft));
-
-		bytesLeft -= Math::Min(Int64(1024), bytesLeft);
-	}
-
-	in.Close();
-
-	File(Utilities::GetNonUnicodeTempFileName(track.outfile).Append(".out")).Delete();
 
 	/* Write ID3v1 tag if requested.
 	 */
@@ -612,4 +593,42 @@ ConfigLayer *BoCA::EncoderCoreAudio::GetConfigurationLayer()
 	if (configLayer == NIL) configLayer = new ConfigureCoreAudio();
 
 	return configLayer;
+}
+
+CA::OSStatus BoCA::AudioFileReadProc(void *inClientData, CA::SInt64 inPosition, CA::UInt32 requestCount, void *buffer, CA::UInt32 *actualCount)
+{
+	EncoderCoreAudio	*filter = (EncoderCoreAudio *) inClientData;
+
+	filter->driver->Seek(inPosition + filter->dataOffset);
+
+	*actualCount = filter->driver->ReadData((UnsignedByte *) buffer, requestCount);
+
+	return 0;
+}
+
+CA::OSStatus BoCA::AudioFileWriteProc(void *inClientData, CA::SInt64 inPosition, CA::UInt32 requestCount, const void *buffer, CA::UInt32 *actualCount)
+{
+	EncoderCoreAudio	*filter = (EncoderCoreAudio *) inClientData;
+
+	filter->driver->Seek(inPosition + filter->dataOffset);
+
+	*actualCount = filter->driver->WriteData((UnsignedByte *) buffer, requestCount);
+
+	return 0;
+}
+
+CA::SInt64 BoCA::AudioFileGetSizeProc(void *inClientData)
+{
+	EncoderCoreAudio	*filter = (EncoderCoreAudio *) inClientData;
+
+	return filter->driver->GetSize() - filter->dataOffset;
+}
+
+CA::OSStatus BoCA::AudioFileSetSizeProc(void *inClientData, CA::SInt64 inSize)
+{
+	EncoderCoreAudio	*filter = (EncoderCoreAudio *) inClientData;
+
+	filter->driver->Truncate(inSize + filter->dataOffset);
+
+	return 0;
 }

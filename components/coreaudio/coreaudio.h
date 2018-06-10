@@ -19,6 +19,11 @@ namespace BoCA
 {
 	class EncoderCoreAudio : public CS::EncoderComponent
 	{
+		friend CA::OSStatus	 AudioFileReadProc(void *, CA::SInt64, CA::UInt32, void *, CA::UInt32 *);
+		friend CA::OSStatus	 AudioFileWriteProc(void *, CA::SInt64, CA::UInt32, const void *, CA::UInt32 *);
+		friend CA::SInt64	 AudioFileGetSizeProc(void *);
+		friend CA::OSStatus	 AudioFileSetSizeProc(void *, CA::SInt64);
+
 		private:
 			ConfigLayer		*configLayer;
 
@@ -27,6 +32,8 @@ namespace BoCA
 			CA::AudioFileID		 audioFile;
 
 			CA::UInt32		 fileType;
+
+			UnsignedInt		 dataOffset;
 
 			Buffer<unsigned char>	 samplesBuffer;
 

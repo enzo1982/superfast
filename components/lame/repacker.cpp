@@ -407,8 +407,6 @@ Bool BoCA::SuperRepacker::WriteFrame(UnsignedByte *iFrame, Int size)
 			}
 		}
 
-		if (!GetPadding(frame) && GetFrameSize(frame) - info + total - bytes < maxR) SetPadding(frame, True);
-
 		/* Increase reservoir if not enough bytes left.
 		 */
 		Int	 required = bytes - reservoir - (GetFrameSize(frame) - info);
@@ -552,9 +550,10 @@ Bool BoCA::SuperRepacker::IncreaseReservoir(Int bytes)
 		 */
 		Int	 brindex = GetBitrateIndex(frame);
 
-		while (brindex < 14)
+		while (brindex < 14 || !GetPadding(frame))
 		{
-			SetBitrateIndex(frame, ++brindex);
+			if (brindex == 14 || (nframeb - frameb == bytes - 1 && !GetPadding(frame))) SetPadding(frame, True);
+			else									    SetBitrateIndex(frame, ++brindex);
 
 			nframeb = GetFrameSize(frame);
 

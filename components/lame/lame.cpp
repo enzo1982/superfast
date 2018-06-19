@@ -218,7 +218,7 @@ Bool BoCA::EncoderLAME::Activate()
 	/* Disable overlap if we use only one thread.
 	 */
 	if (numberOfThreads == 1) overlap = 0;
-	else			  overlap = 4;
+	else			  overlap = 4 * 1152 / frameSize;
 
 	/* Start up worker threads.
 	 */

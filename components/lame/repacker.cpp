@@ -423,6 +423,15 @@ Bool BoCA::SuperRepacker::WriteFrame(UnsignedByte *iFrame, Int size)
 			driver->WriteData(frame + info + prevRes, reservoir - prevRes);
 		}
 
+		/* Revert changes if new data does not fit into frame.
+		 */
+		if (bytes - reservoir - (GetFrameSize(frame) - info) > 0)
+		{
+			driver->Seek(driver->GetPos() - reservoir);
+
+			return False;
+		}
+
 		/* Compute frame CRC.
 		 */
 		if (GetHeaderLength(frame) == 6) FrameCRC::Update(frame);
@@ -439,8 +448,6 @@ Bool BoCA::SuperRepacker::WriteFrame(UnsignedByte *iFrame, Int size)
 			driver->WriteData(frame + info + reservoir, bytes - reservoir);
 
 			reservoir += GetFrameSize(frame) - info - bytes;
-
-			if (reservoir < 0) { reservoir = 0; return False; }
 		}
 		else
 		{

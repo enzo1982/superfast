@@ -242,8 +242,6 @@ Int BoCA::SuperWorker::Run()
 			if (dataLength > 0) packetSizes.Add(dataLength);
 		}
 
-		samplesBuffer.Resize(0);
-
 		workerMutex.Release();
 
 		process	= False;
@@ -264,6 +262,50 @@ Void BoCA::SuperWorker::Encode(const Buffer<signed short> &buffer, Int offset, I
 
 	flush	= last;
 	process = True;
+}
+
+Void BoCA::SuperWorker::ReEncode(Int skipFrames, Int dummyFrames)
+{
+	Int	 skipSamples  = skipFrames  * frameSize * format.channels;
+	Int	 dummySamples = dummyFrames * frameSize * format.channels;
+
+	/* Backup samples buffer.
+	 */
+	Buffer<signed short>	 buffer(samplesBuffer.Size() - skipSamples);
+
+	memcpy(buffer, samplesBuffer + skipSamples, buffer.Size() * sizeof(signed short));
+
+	/* Fill samples buffer with dummy data.
+	 */
+	samplesBuffer.Resize(dummySamples);
+
+	for (Int i = 0; i < samplesBuffer.Size(); i++) samplesBuffer[i] = i * 147;
+
+	/* Encode dummy frames to pressure reservoir.
+	 */
+	workerMutex.Release();
+
+	process = True;
+
+	while (process) S::System::System::Sleep(1);
+
+	workerMutex.Lock();
+
+	/* Restore samples buffer.
+	 */
+	samplesBuffer.Resize(buffer.Size());
+
+	memcpy(samplesBuffer, buffer, buffer.Size() * sizeof(signed short));
+
+	/* Re-encode previous samples.
+	 */
+	workerMutex.Release();
+
+	process = True;
+
+	while (process) S::System::System::Sleep(1);
+
+	workerMutex.Lock();
 }
 
 Void BoCA::SuperWorker::GetInfoTag(Buffer<UnsignedByte> &buffer) const

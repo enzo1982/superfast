@@ -40,7 +40,8 @@ namespace BoCA
 			Buffer<signed short>	 samplesBuffer;
 
 			Int			 EncodeFrames(Bool);
-			Int			 ProcessPackets(const Buffer<unsigned char> &, const Array<Int> &, Bool);
+			Int			 ProcessResults(SuperWorker *, Bool);
+			Int			 ProcessPackets(const Buffer<unsigned char> &, const Array<Int> &, Bool, Int &, Bool &);
 		public:
 			static const String	&GetComponentSpecs();
 

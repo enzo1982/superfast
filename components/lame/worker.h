@@ -44,6 +44,7 @@ namespace BoCA
 							~SuperWorker();
 
 			Void				 Encode(const Buffer<signed short> &, Int, Int, Bool);
+			Void				 ReEncode(Int, Int);
 
 			Void				 GetInfoTag(Buffer<UnsignedByte> &) const;
 

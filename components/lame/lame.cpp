@@ -356,7 +356,7 @@ Int BoCA::EncoderLAME::EncodeFrames(Bool flush)
 
 		/* See if the worker has some packets for us.
 		 */
-		if (workerToUse->GetPacketSizes().Length() != 0) dataLength += ProcessPackets(workerToUse->GetPackets(), workerToUse->GetPacketSizes(), nextWorker == workers.Length());
+		if (workerToUse->GetPacketSizes().Length() != 0) dataLength += ProcessResults(workerToUse, nextWorker == workers.Length());
 
 		/* Pass new frames to worker.
 		 */
@@ -388,7 +388,7 @@ Int BoCA::EncoderLAME::EncodeFrames(Bool flush)
 
 		/* See if the worker has some packets for us.
 		 */
-		if (workerToUse->GetPacketSizes().Length() != 0) dataLength += ProcessPackets(workerToUse->GetPackets(), workerToUse->GetPacketSizes(), nextWorker == workers.Length());
+		if (workerToUse->GetPacketSizes().Length() != 0) dataLength += ProcessResults(workerToUse, nextWorker == workers.Length());
 
 		workerToUse->Release();
 
@@ -402,7 +402,34 @@ Int BoCA::EncoderLAME::EncodeFrames(Bool flush)
 	return dataLength;
 }
 
-Int BoCA::EncoderLAME::ProcessPackets(const Buffer<unsigned char> &data, const Array<Int> &chunkSizes, Bool first)
+Int BoCA::EncoderLAME::ProcessResults(SuperWorker *worker, Bool first)
+{
+	Int	 processed  = 0;
+	Bool	 complete   = False;
+
+	if (workers.Length() == 1) return ProcessPackets(worker->GetPackets(), worker->GetPacketSizes(), first, processed, complete);
+
+	Int	 dataLength = 0;
+
+	for (Int round = 0; !complete; round++)
+	{
+		dataLength += ProcessPackets(worker->GetPackets(), worker->GetPacketSizes(), first, processed, complete);
+
+		/* Reduce overlap if not finished after 4 rounds.
+		 */
+		if (round & 4 && overlap > 0) { round = 0; overlap--; processed++; }
+
+		/* Re-encode remaining frames if a frame didn't fit.
+		 */
+		if (!complete) worker->ReEncode(processed, round);
+	}
+
+	overlap = 4 * 1152 / frameSize;
+
+	return dataLength;
+}
+
+Int BoCA::EncoderLAME::ProcessPackets(const Buffer<unsigned char> &data, const Array<Int> &chunkSizes, Bool first, Int &processed, Bool &complete)
 {
 	if (workers.Length() == 1) return driver->WriteData(data, data.Size());
 
@@ -416,16 +443,23 @@ Int BoCA::EncoderLAME::ProcessPackets(const Buffer<unsigned char> &data, const A
 
 	if (!first) for (Int i = 0; i < overlap; i++) offset += packetSizes.GetNth(i);
 
+	processed = 0;
+	complete  = False;
+
 	for (Int i = 0; i < packetSizes.Length(); i++)
 	{
 		if (i <	overlap && !first)	continue;
 		if (packetSizes.GetNth(i) == 0) continue;
 
-		repacker->WriteFrame(packets + offset, packetSizes.GetNth(i));
+		if (!repacker->WriteFrame(packets + offset, packetSizes.GetNth(i))) return dataLength;
+
+		processed++;
 
 		offset	   += packetSizes.GetNth(i);
 		dataLength += packetSizes.GetNth(i);
 	}
+
+	complete = True;
 
 	return dataLength;
 }

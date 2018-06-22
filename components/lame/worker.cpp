@@ -271,37 +271,31 @@ Void BoCA::SuperWorker::ReEncode(Int skipFrames, Int dummyFrames)
 
 	/* Backup samples buffer.
 	 */
-	Buffer<signed short>	 buffer(samplesBuffer.Size() - skipSamples);
+	Buffer<signed short>	 backupBuffer(samplesBuffer.Size() - skipSamples);
 
-	memcpy(buffer, samplesBuffer + skipSamples, buffer.Size() * sizeof(signed short));
+	memcpy(backupBuffer, samplesBuffer + skipSamples, backupBuffer.Size() * sizeof(signed short));
 
-	/* Fill samples buffer with dummy data.
+	/* Create buffer with dummy data.
 	 */
-	samplesBuffer.Resize(dummySamples);
+	Buffer<signed short>	 dummyBuffer(dummySamples);
 
-	for (Int i = 0; i < samplesBuffer.Size(); i++) samplesBuffer[i] = i * 147;
+	for (Int i = 0; i < dummyBuffer.Size(); i++) dummyBuffer[i] = i * 147;
 
 	/* Encode dummy frames to pressure reservoir.
 	 */
-	workerMutex.Release();
+	Encode(dummyBuffer, 0, dummyBuffer.Size(), flush);
 
-	process = True;
+	workerMutex.Release();
 
 	while (process) S::System::System::Sleep(1);
 
 	workerMutex.Lock();
 
-	/* Restore samples buffer.
-	 */
-	samplesBuffer.Resize(buffer.Size());
-
-	memcpy(samplesBuffer, buffer, buffer.Size() * sizeof(signed short));
-
 	/* Re-encode previous samples.
 	 */
-	workerMutex.Release();
+	Encode(backupBuffer, 0, backupBuffer.Size(), flush);
 
-	process = True;
+	workerMutex.Release();
 
 	while (process) S::System::System::Sleep(1);
 

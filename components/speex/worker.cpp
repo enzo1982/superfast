@@ -137,8 +137,6 @@ Int BoCA::SuperWorker::Run()
 			samplesLeft -= samplesPerFrame;
 		}
 
-		samplesBuffer.Resize(0);
-
 		workerMutex.Release();
 
 		process	= False;

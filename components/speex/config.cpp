@@ -1,5 +1,5 @@
  /* BoCA - BonkEnc Component Architecture
-  * Copyright (C) 2007-2017 Robert Kausch <robert.kausch@freac.org>
+  * Copyright (C) 2007-2018 Robert Kausch <robert.kausch@freac.org>
   *
   * This program is free software; you can redistribute it and/or
   * modify it under the terms of the GNU General Public License as
@@ -56,7 +56,7 @@ BoCA::ConfigureSpeex::ConfigureSpeex()
 	text_profile		= new Text(i18n->AddColon(i18n->TranslateString("Select encoding profile")), Point(10, 16));
 
 	combo_profile		= new ComboBox(Point(18 + text_profile->GetUnscaledTextWidth(), 13), Size(378 - text_profile->GetUnscaledTextWidth(), 0));
-	combo_profile->AddEntry(i18n->TranslateString("Auto"));
+	combo_profile->AddEntry(i18n->TranslateString("auto"));
 	combo_profile->AddEntry(i18n->TranslateString("Narrowband (8 kHz)"));
 	combo_profile->AddEntry(i18n->TranslateString("Wideband (16 kHz)"));
 	combo_profile->AddEntry(i18n->TranslateString("Ultra-Wideband (32 kHz)"));

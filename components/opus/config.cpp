@@ -38,7 +38,7 @@ BoCA::ConfigureOpus::ConfigureOpus()
 	text_mode		= new Text(i18n->AddColon(i18n->TranslateString("Encoding mode")), Point(7, 13));
 
 	combo_mode		= new ComboBox(Point(120, 10), Size(214, 0));
-	combo_mode->AddEntry(i18n->TranslateString("Auto"));
+	combo_mode->AddEntry(i18n->TranslateString("auto"));
 	combo_mode->AddEntry(i18n->TranslateString("Voice"));
 	combo_mode->AddEntry(i18n->TranslateString("Music"));
 	combo_mode->SelectNthEntry(config->GetIntValue(ConfigID, "Mode", 0));
@@ -47,7 +47,7 @@ BoCA::ConfigureOpus::ConfigureOpus()
 	text_bandwidth		= new Text(i18n->AddColon(i18n->TranslateString("Bandwidth")), Point(7, 40));
 
 	combo_bandwidth		= new ComboBox(Point(120, 37), Size(214, 0));
-	combo_bandwidth->AddEntry(i18n->TranslateString("Auto"));
+	combo_bandwidth->AddEntry(i18n->TranslateString("auto"));
 	combo_bandwidth->AddEntry(i18n->TranslateString("Narrowband"));
 	combo_bandwidth->AddEntry(i18n->TranslateString("Mediumband"));
 	combo_bandwidth->AddEntry(i18n->TranslateString("Wideband"));

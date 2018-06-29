@@ -205,7 +205,7 @@ BoCA::ConfigureLAME::ConfigureLAME()
 	misc_stereomode			= new GroupBox(i18n->TranslateString("Stereo mode"), Point(153, 11), Size(269, 39));
 
 	misc_combo_stereomode		= new ComboBox(Point(10, 10), Size(120, 0));
-	misc_combo_stereomode->AddEntry(i18n->TranslateString("Auto"));
+	misc_combo_stereomode->AddEntry(i18n->TranslateString("auto"));
 	misc_combo_stereomode->AddEntry(i18n->TranslateString("Mono"));
 	misc_combo_stereomode->AddEntry(i18n->TranslateString("Stereo"));
 	misc_combo_stereomode->AddEntry(i18n->TranslateString("Joint Stereo"));

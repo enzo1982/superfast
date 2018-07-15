@@ -550,10 +550,10 @@ Bool BoCA::SuperRepacker::IncreaseReservoir(Int bytes)
 		 */
 		Int	 brindex = GetBitrateIndex(frame);
 
-		while (brindex < 14 || !GetPadding(frame))
+		while (brindex < maxIndex || !GetPadding(frame))
 		{
-			if (brindex == 14 || (nframeb - frameb == bytes - 1 && !GetPadding(frame))) SetPadding(frame, True);
-			else									    SetBitrateIndex(frame, ++brindex);
+			if (brindex == maxIndex || (nframeb - frameb == bytes - 1 && !GetPadding(frame))) SetPadding(frame, True);
+			else										  SetBitrateIndex(frame, ++brindex);
 
 			nframeb = GetFrameSize(frame);
 

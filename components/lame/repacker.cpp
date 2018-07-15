@@ -427,6 +427,8 @@ Bool BoCA::SuperRepacker::WriteFrame(UnsignedByte *iFrame, Int size)
 		{
 			driver->Seek(driver->GetPos() - reservoir);
 
+			frameCount--;
+
 			return False;
 		}
 

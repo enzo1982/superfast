@@ -411,7 +411,7 @@ Bool BoCA::SuperRepacker::WriteFrame(UnsignedByte *iFrame, Int size)
 		 */
 		Int	 required = bytes - reservoir - (GetFrameSize(frame) - info);
 
-		if (required > 0)
+		if (required > 0 && !cbrIndex)
 		{
 			Int	 prevRes = reservoir;
 

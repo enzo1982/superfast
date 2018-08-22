@@ -60,6 +60,20 @@ const String &BoCA::EncoderFDKAAC::GetComponentSpecs()
 		    </format>											\
 		    <input bits=\"16\" channels=\"1-6,8\"							\
 			   rate=\"8000,11025,12000,16000,22050,24000,32000,44100,48000,64000,88200,96000\"/>	\
+		    <parameters>										\
+		      <selection name=\"AAC encoding mode\" argument=\"-m %VALUE\" default=\"LC\">		\
+			<option alias=\"Low Complexity\">LC</option>						\
+			<option alias=\"High Efficiency\">HE</option>						\
+			<option alias=\"High Efficiency v2\">HEv2</option>					\
+			<option alias=\"Low Delay\">LD</option>							\
+			<option alias=\"Enhanced Low Delay\">ELD</option>					\
+		      </selection>										\
+		      <range name=\"Bitrate per channel\" argument=\"-b %VALUE\" default=\"64\">		\
+			<min alias=\"min\">8</min>								\
+			<max alias=\"max\">256</max>								\
+		      </range>											\
+		      <switch name=\"Write raw AAC files\" argument=\"--raw\"/>					\
+		    </parameters>										\
 		  </component>											\
 														\
 		");
@@ -98,17 +112,21 @@ BoCA::EncoderFDKAAC::EncoderFDKAAC()
 	delaySamples = 0;
 
 	nextWorker   = 0;
+
+	config	     = Config::Copy(GetConfiguration());
+
+	ConvertArguments(config);
 }
 
 BoCA::EncoderFDKAAC::~EncoderFDKAAC()
 {
+	Config::Free(config);
+
 	if (configLayer != NIL) Object::DeleteObject(configLayer);
 }
 
 Bool BoCA::EncoderFDKAAC::Activate()
 {
-	const Config	*config = GetConfiguration();
-
 	const Format	&format = track.GetFormat();
 
 	/* Get configuration.
@@ -199,7 +217,7 @@ Bool BoCA::EncoderFDKAAC::Activate()
 			{
 				Buffer<unsigned char>	 id3Buffer;
 
-				tagger->SetConfiguration(GetConfiguration());
+				tagger->SetConfiguration(config);
 				tagger->RenderBuffer(id3Buffer, track);
 
 				driver->WriteData(id3Buffer, id3Buffer.Size());
@@ -233,8 +251,6 @@ Bool BoCA::EncoderFDKAAC::Activate()
 
 Bool BoCA::EncoderFDKAAC::Deactivate()
 {
-	const Config	*config = GetConfiguration();
-
 	/* Output remaining samples to encoder.
 	 */
 	EncodeFrames(True);
@@ -293,7 +309,7 @@ Bool BoCA::EncoderFDKAAC::Deactivate()
 
 				if (tagger != NIL)
 				{
-					tagger->SetConfiguration(GetConfiguration());
+					tagger->SetConfiguration(config);
 					tagger->RenderStreamInfo(track.outfile, track);
 
 					boca.DeleteComponent(tagger);
@@ -328,7 +344,7 @@ Bool BoCA::EncoderFDKAAC::Deactivate()
 			{
 				Buffer<unsigned char>	 id3Buffer;
 
-				tagger->SetConfiguration(GetConfiguration());
+				tagger->SetConfiguration(config);
 				tagger->RenderBuffer(id3Buffer, track);
 
 				driver->WriteData(id3Buffer, id3Buffer.Size());
@@ -351,7 +367,7 @@ Bool BoCA::EncoderFDKAAC::Deactivate()
 			{
 				Buffer<unsigned char>	 id3Buffer;
 
-				tagger->SetConfiguration(GetConfiguration());
+				tagger->SetConfiguration(config);
 				tagger->RenderBuffer(id3Buffer, track);
 
 				driver->Seek(0);
@@ -491,8 +507,6 @@ Bool BoCA::EncoderFDKAAC::SetOutputFormat(Int n)
 
 String BoCA::EncoderFDKAAC::GetOutputFileExtension() const
 {
-	const Config	*config = GetConfiguration();
-
 	if (config->GetIntValue(ConfigureFDKAAC::ConfigID, "MP4Container", True))
 	{
 		switch (config->GetIntValue(ConfigureFDKAAC::ConfigID, "MP4FileExtension", 0))
@@ -506,6 +520,41 @@ String BoCA::EncoderFDKAAC::GetOutputFileExtension() const
 	}
 
 	return "aac";
+}
+
+Bool BoCA::EncoderFDKAAC::ConvertArguments(Config *config)
+{
+	if (!config->GetIntValue("Settings", "EnableConsole", False)) return False;
+
+	static const String	 encoderID = "fdkaac-enc";
+
+	/* Get command line settings.
+	 */
+	Int	 bitrate = 64;
+	String	 mode	 = "LC";
+
+	if (config->GetIntValue(encoderID, "Set Bitrate per channel", False)) bitrate = config->GetIntValue(encoderID, "Bitrate per channel", bitrate);
+	if (config->GetIntValue(encoderID, "Set AAC encoding mode", False))   mode    = config->GetStringValue(encoderID, "AAC encoding mode", mode).ToUpper();
+
+	/* Set configuration values.
+	 */
+	config->SetIntValue(ConfigureFDKAAC::ConfigID, "MPEGVersion", 0);
+
+	config->SetIntValue(ConfigureFDKAAC::ConfigID, "MP4Container", !config->GetIntValue(encoderID, "Write raw AAC files", False));
+
+	config->SetIntValue(ConfigureFDKAAC::ConfigID, "Bitrate", Math::Max(8, Math::Min(256, bitrate)));
+
+	Int	 aacType = AOT_AAC_LC;
+
+	if	(mode == "LC"  ) aacType = AOT_AAC_LC;
+	else if (mode == "HE"  ) aacType = AOT_SBR;
+	else if (mode == "HEV2") aacType = AOT_PS;
+	else if (mode == "LD"  ) aacType = AOT_ER_AAC_LD;
+	else if (mode == "ELD" ) aacType = AOT_ER_AAC_ELD;
+
+	config->SetIntValue(ConfigureFDKAAC::ConfigID, "AACType", aacType);
+
+	return True;
 }
 
 ConfigLayer *BoCA::EncoderFDKAAC::GetConfigurationLayer()

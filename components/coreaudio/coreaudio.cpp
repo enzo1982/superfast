@@ -24,40 +24,51 @@ const String &BoCA::EncoderCoreAudio::GetComponentSpecs()
 	if (coreaudiodll != NIL)
 #endif
 	{
-		componentSpecs = "						\
-										\
-		  <?xml version=\"1.0\" encoding=\"UTF-8\"?>			\
-		  <component>							\
-		    <name>Core Audio AAC/ALAC Encoder (SuperFast)</name>	\
-		    <version>1.0</version>					\
-		    <id>supercoreaudio-enc</id>					\
-		    <type>encoder</type>					\
-		    <replace>superfaac-enc</replace>				\
-		    <replace>voaacenc-enc</replace>				\
-		    <replace>avconv-alac-enc</replace>				\
-		    <format>							\
-		      <name>MPEG-4 AAC Files</name>				\
-		      <extension>m4a</extension>				\
-		      <extension>m4b</extension>				\
-		      <extension>m4r</extension>				\
-		      <extension>mp4</extension>				\
-		      <tag id=\"mp4-tag\" mode=\"other\">MP4 Metadata</tag>	\
-		    </format>							\
-		    <format>							\
-		      <name>Raw AAC Files</name>				\
-		      <extension>aac</extension>				\
-		      <tag id=\"id3v2-tag\" mode=\"prepend\">ID3v2</tag>	\
-		    </format>							\
-		    <format>							\
-		      <name>Apple Lossless Files</name>				\
-		      <lossless>true</lossless>					\
-		      <extension>m4a</extension>				\
-		      <extension>m4b</extension>				\
-		      <extension>mp4</extension>				\
-		      <tag id=\"mp4-tag\" mode=\"other\">MP4 Metadata</tag>	\
-		    </format>							\
-		  </component>							\
-										\
+		componentSpecs = "									\
+													\
+		  <?xml version=\"1.0\" encoding=\"UTF-8\"?>						\
+		  <component>										\
+		    <name>Core Audio AAC/ALAC Encoder (SuperFast)</name>				\
+		    <version>1.0</version>								\
+		    <id>supercoreaudio-enc</id>								\
+		    <type>encoder</type>								\
+		    <replace>superfaac-enc</replace>							\
+		    <replace>voaacenc-enc</replace>							\
+		    <replace>avconv-alac-enc</replace>							\
+		    <format>										\
+		      <name>MPEG-4 AAC Files</name>							\
+		      <extension>m4a</extension>							\
+		      <extension>m4b</extension>							\
+		      <extension>m4r</extension>							\
+		      <extension>mp4</extension>							\
+		      <tag id=\"mp4-tag\" mode=\"other\">MP4 Metadata</tag>				\
+		    </format>										\
+		    <format>										\
+		      <name>Raw AAC Files</name>							\
+		      <extension>aac</extension>							\
+		      <tag id=\"id3v2-tag\" mode=\"prepend\">ID3v2</tag>				\
+		    </format>										\
+		    <format>										\
+		      <name>Apple Lossless Files</name>							\
+		      <lossless>true</lossless>								\
+		      <extension>m4a</extension>							\
+		      <extension>m4b</extension>							\
+		      <extension>mp4</extension>							\
+		      <tag id=\"mp4-tag\" mode=\"other\">MP4 Metadata</tag>				\
+		    </format>										\
+		    <parameters>									\
+		      <selection name=\"Output format\" argument=\"-f %VALUE\" default=\"AAC\">		\
+			<option alias=\"Advanced Audio Coding\">AAC</option>				\
+			<option alias=\"Apple Lossless Audio Codec\">ALAC</option>			\
+		      </selection>									\
+		      <range name=\"Bitrate per channel\" argument=\"-b %VALUE\" default=\"64\">	\
+			<min alias=\"min\">8</min>							\
+			<max alias=\"max\">192</max>							\
+		      </range>										\
+		      <switch name=\"Write raw AAC files\" argument=\"--raw\"/>				\
+		    </parameters>									\
+		  </component>										\
+													\
 		";
 	}
 
@@ -105,10 +116,16 @@ BoCA::EncoderCoreAudio::EncoderCoreAudio()
 	packetsMissing = 0;
 
 	totalSamples   = 0;
+
+	config	       = Config::Copy(GetConfiguration());
+
+	ConvertArguments(config);
 }
 
 BoCA::EncoderCoreAudio::~EncoderCoreAudio()
 {
+	Config::Free(config);
+
 	if (configLayer != NIL) Object::DeleteObject(configLayer);
 }
 
@@ -116,8 +133,6 @@ Bool BoCA::EncoderCoreAudio::IsLossless() const
 {
 	/* Get configuration.
 	 */
-	const Config	*config = GetConfiguration();
-
 	CA::UInt32	 codec = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatMPEG4AAC);
 
 	/* Signal lossless for ALAC.
@@ -130,8 +145,6 @@ Bool BoCA::EncoderCoreAudio::IsLossless() const
 Bool BoCA::EncoderCoreAudio::Activate()
 {
 	static Endianness	 endianness = CPU().GetEndianness();
-
-	const Config	*config = GetConfiguration();
 
 	const Format	&format = track.GetFormat();
 
@@ -236,7 +249,7 @@ Bool BoCA::EncoderCoreAudio::Activate()
 			{
 				Buffer<unsigned char>	 id3Buffer;
 
-				tagger->SetConfiguration(GetConfiguration());
+				tagger->SetConfiguration(config);
 				tagger->RenderBuffer(id3Buffer, track);
 
 				driver->WriteData(id3Buffer, id3Buffer.Size());
@@ -299,9 +312,7 @@ Bool BoCA::EncoderCoreAudio::Deactivate()
 {
 	/* Get configuration.
 	 */
-	const Config	*config = GetConfiguration();
-
-	CA::UInt32	 codec	= config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatMPEG4AAC);
+	CA::UInt32	 codec = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatMPEG4AAC);
 
 	/* Convert final frames.
 	 */
@@ -375,7 +386,7 @@ Bool BoCA::EncoderCoreAudio::Deactivate()
 
 			if (tagger != NIL)
 			{
-				tagger->SetConfiguration(GetConfiguration());
+				tagger->SetConfiguration(config);
 				tagger->RenderStreamInfo(track.outfile, track);
 
 				boca.DeleteComponent(tagger);
@@ -398,7 +409,7 @@ Bool BoCA::EncoderCoreAudio::Deactivate()
 			{
 				Buffer<unsigned char>	 id3Buffer;
 
-				tagger->SetConfiguration(GetConfiguration());
+				tagger->SetConfiguration(config);
 				tagger->RenderBuffer(id3Buffer, track);
 
 				driver->WriteData(id3Buffer, id3Buffer.Size());
@@ -421,7 +432,7 @@ Bool BoCA::EncoderCoreAudio::Deactivate()
 			{
 				Buffer<unsigned char>	 id3Buffer;
 
-				tagger->SetConfiguration(GetConfiguration());
+				tagger->SetConfiguration(config);
 				tagger->RenderBuffer(id3Buffer, track);
 
 				driver->Seek(0);
@@ -571,8 +582,6 @@ Bool BoCA::EncoderCoreAudio::SetOutputFormat(Int n)
 
 String BoCA::EncoderCoreAudio::GetOutputFileExtension() const
 {
-	const Config	*config = GetConfiguration();
-
 	if (config->GetIntValue(ConfigureCoreAudio::ConfigID, "MP4Container", True))
 	{
 		switch (config->GetIntValue(ConfigureCoreAudio::ConfigID, "MP4FileExtension", 0))
@@ -586,6 +595,36 @@ String BoCA::EncoderCoreAudio::GetOutputFileExtension() const
 	}
 
 	return "aac";
+}
+
+Bool BoCA::EncoderCoreAudio::ConvertArguments(Config *config)
+{
+	if (!config->GetIntValue("Settings", "EnableConsole", False)) return False;
+
+	static const String	 encoderID = "coreaudio-enc";
+
+	/* Get command line settings.
+	 */
+	Int	 bitrate = 64;
+	String	 format	 = "AAC";
+
+	if (config->GetIntValue(encoderID, "Set Bitrate per channel", False)) bitrate = config->GetIntValue(encoderID, "Bitrate per channel", bitrate);
+	if (config->GetIntValue(encoderID, "Set Output format", False))	      format  = config->GetStringValue(encoderID, "Output format", format).ToUpper();
+
+	/* Set configuration values.
+	 */
+	config->SetIntValue(ConfigureCoreAudio::ConfigID, "MP4Container", !config->GetIntValue(encoderID, "Write raw AAC files", False) || format == "ALAC");
+
+	config->SetIntValue(ConfigureCoreAudio::ConfigID, "Bitrate", Math::Max(8, Math::Min(256, bitrate)));
+
+	Int	 audioFormat = CA::kAudioFormatMPEG4AAC;
+
+	if	(format == "AAC" ) audioFormat = CA::kAudioFormatMPEG4AAC;
+	else if (format == "ALAC") audioFormat = CA::kAudioFormatAppleLossless;
+
+	config->SetIntValue(ConfigureCoreAudio::ConfigID, "Codec", audioFormat);
+
+	return True;
 }
 
 ConfigLayer *BoCA::EncoderCoreAudio::GetConfigurationLayer()

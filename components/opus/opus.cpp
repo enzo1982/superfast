@@ -26,23 +26,45 @@ const String &BoCA::EncoderOpus::GetComponentSpecs()
 
 	if (oggdll != NIL && opusdll != NIL)
 	{
-		componentSpecs = "								\
-												\
-		  <?xml version=\"1.0\" encoding=\"UTF-8\"?>					\
-		  <component>									\
-		    <name>Opus Audio Encoder %VERSION% (SuperFast)</name>			\
-		    <version>1.0</version>							\
-		    <id>superopus-enc</id>							\
-		    <type>encoder</type>							\
-		    <format>									\
-		      <name>Opus Audio</name>							\
-		      <extension>opus</extension>						\
-		      <extension>oga</extension>						\
-		      <tag id=\"vorbis-tag\" mode=\"other\">Vorbis Comment</tag>		\
-		    </format>									\
-		    <input bits=\"16\" channels=\"1-8\" rate=\"8000,12000,16000,24000,48000\"/>	\
-		  </component>									\
-												\
+		componentSpecs = "									\
+													\
+		  <?xml version=\"1.0\" encoding=\"UTF-8\"?>						\
+		  <component>										\
+		    <name>Opus Audio Encoder %VERSION% (SuperFast)</name>				\
+		    <version>1.0</version>								\
+		    <id>superopus-enc</id>								\
+		    <type>encoder</type>								\
+		    <format>										\
+		      <name>Opus Audio</name>								\
+		      <extension>opus</extension>							\
+		      <extension>oga</extension>							\
+		      <tag id=\"vorbis-tag\" mode=\"other\">Vorbis Comment</tag>			\
+		    </format>										\
+		    <input bits=\"16\" channels=\"1-8\" rate=\"8000,12000,16000,24000,48000\"/>		\
+		    <parameters>									\
+		      <range name=\"Bitrate\" argument=\"--bitrate %VALUE\" default=\"128\">		\
+			<min>6</min>									\
+			<max>510</max>									\
+		      </range>										\
+		      <range name=\"Encoding complexity\" argument=\"--comp %VALUE\" default=\"10\">	\
+			<min alias=\"fastest\">0</min>							\
+			<max alias=\"slowest\">10</max>							\
+		      </range>										\
+		      <selection name=\"Frame size\" argument=\"--framesize %VALUE\" default=\"20\">	\
+			<option alias=\"5ms\">5</option>						\
+			<option alias=\"10ms\">10</option>						\
+			<option alias=\"20ms\">20</option>						\
+			<option alias=\"40ms\">40</option>						\
+			<option alias=\"60ms\">60</option>						\
+			<option alias=\"80ms\">80</option>						\
+			<option alias=\"100ms\">100</option>						\
+			<option alias=\"120ms\">120</option>						\
+		      </selection>									\
+ 		      <switch name=\"Use constrained VBR encoding\" argument=\"--cvbr\"/>		\
+ 		      <switch name=\"Use hard CBR encoding\" argument=\"--hard-cbr\"/>			\
+		    </parameters>									\
+		  </component>										\
+													\
 		";
 
 		componentSpecs.Replace("%VERSION%", String("v").Append(String(ex_opus_get_version_string()).Replace("libopus ", NIL)));
@@ -100,6 +122,10 @@ BoCA::EncoderOpus::EncoderOpus()
 
 	nextWorker	= 0;
 
+	config		= Config::Copy(GetConfiguration());
+
+	ConvertArguments(config);
+
 	memset(&os, 0, sizeof(os));
 	memset(&og, 0, sizeof(og));
 	memset(&op, 0, sizeof(op));
@@ -107,14 +133,14 @@ BoCA::EncoderOpus::EncoderOpus()
 
 BoCA::EncoderOpus::~EncoderOpus()
 {
+	Config::Free(config);
+
 	if (configLayer != NIL) Object::DeleteObject(configLayer);
 }
 
 Bool BoCA::EncoderOpus::Activate()
 {
 	static Endianness	 endianness = CPU().GetEndianness();
-
-	const Config	*config = GetConfiguration();
 
 	const Format	&format = track.GetFormat();
 	Info		 info	= track.GetInfo();
@@ -209,7 +235,7 @@ Bool BoCA::EncoderOpus::Activate()
 		{
 			const char	*opusVersion = ex_opus_get_version_string();
 
-			tagger->SetConfiguration(GetConfiguration());
+			tagger->SetConfiguration(config);
 			tagger->SetVendorString(String(opusVersion).Append("\n"));
 
 			if (config->GetIntValue("Tags", "EnableVorbisComment", True) && (info.HasBasicInfo() || (track.tracks.Length() > 0 && config->GetIntValue("Tags", "WriteChapters", True)))) tagger->RenderBuffer(vcBuffer, track);
@@ -435,7 +461,7 @@ Int BoCA::EncoderOpus::WriteOggPackets(Bool flush)
 
 Bool BoCA::EncoderOpus::FixChapterMarks()
 {
-	if (track.tracks.Length() == 0 || !GetConfiguration()->GetIntValue("Tags", "WriteChapters", True)) return True;
+	if (track.tracks.Length() == 0 || !config->GetIntValue("Tags", "WriteChapters", True)) return True;
 
 	driver->Seek(0);
 
@@ -523,14 +549,45 @@ Bool BoCA::EncoderOpus::FixChapterMarks()
 
 String BoCA::EncoderOpus::GetOutputFileExtension() const
 {
-	const Config	*config = GetConfiguration();
-
 	switch (config->GetIntValue(ConfigureOpus::ConfigID, "FileExtension", 0))
 	{
 		default:
 		case  0: return "opus";
 		case  1: return "oga";
 	}
+}
+
+Bool BoCA::EncoderOpus::ConvertArguments(Config *config)
+{
+	if (!config->GetIntValue("Settings", "EnableConsole", False)) return False;
+
+	static const String	 encoderID = "opus-enc";
+
+	/* Get command line settings.
+	 */
+	Int	 bitrate    = 128;
+	Int	 complexity = 10;
+	Int	 framesize  = 20;
+
+	if (config->GetIntValue(encoderID, "Set Bitrate", False))	      bitrate	 = config->GetIntValue(encoderID, "Bitrate", bitrate);
+	if (config->GetIntValue(encoderID, "Set Encoding complexity", False)) complexity = config->GetIntValue(encoderID, "Encoding complexity", complexity);
+	if (config->GetIntValue(encoderID, "Set Frame size", False))	      framesize	 = config->GetIntValue(encoderID, "Frame size", framesize);
+
+	/* Set configuration values.
+	 */
+	config->SetIntValue(ConfigureOpus::ConfigID, "Mode", 0);
+	config->SetIntValue(ConfigureOpus::ConfigID, "Bandwidth", 0);
+	config->SetIntValue(ConfigureOpus::ConfigID, "PacketLoss", 0);
+	config->SetIntValue(ConfigureOpus::ConfigID, "EnableDTX", False);
+
+	config->SetIntValue(ConfigureOpus::ConfigID, "EnableVBR", !config->GetIntValue(encoderID, "Use hard CBR encoding", False));
+	config->SetIntValue(ConfigureOpus::ConfigID, "EnableConstrainedVBR", config->GetIntValue(encoderID, "Use constrained VBR encoding", False));
+
+	config->SetIntValue(ConfigureOpus::ConfigID, "Bitrate", Math::Max(6, Math::Min(510, bitrate)));
+	config->SetIntValue(ConfigureOpus::ConfigID, "Complexity", Math::Max(0, Math::Min(10, complexity)));
+	config->SetIntValue(ConfigureOpus::ConfigID, "FrameSize", Math::Max(5, Math::Min(120, framesize)) * 1000);
+
+	return True;
 }
 
 ConfigLayer *BoCA::EncoderOpus::GetConfigurationLayer()

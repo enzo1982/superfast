@@ -59,6 +59,17 @@ const String &BoCA::EncoderFAAC::GetComponentSpecs()
 		    </format>											\
 		    <input bits=\"16\" channels=\"1-6\"								\
 			   rate=\"8000,11025,12000,16000,22050,24000,32000,44100,48000,64000,88200,96000\"/>	\
+		    <parameters>										\
+		      <range name=\"VBR quality\" argument=\"-q %VALUE\" default=\"100\">			\
+			<min alias=\"worst\">10</min>								\
+			<max alias=\"best\">500</max>								\
+		      </range>											\
+		      <range name=\"ABR bitrate per channel\" argument=\"-b %VALUE\" default=\"64\">		\
+			<min alias=\"min\">8</min>								\
+			<max alias=\"max\">256</max>								\
+		      </range>											\
+		      <switch name=\"Write raw AAC files\" argument=\"--raw\"/>					\
+		    </parameters>										\
 		  </component>											\
 														\
 		");
@@ -105,17 +116,21 @@ BoCA::EncoderFAAC::EncoderFAAC()
 	totalSamples = 0;
 
 	nextWorker   = 0;
+
+	config	     = Config::Copy(GetConfiguration());
+
+	ConvertArguments(config);
 }
 
 BoCA::EncoderFAAC::~EncoderFAAC()
 {
+	Config::Free(config);
+
 	if (configLayer != NIL) Object::DeleteObject(configLayer);
 }
 
 Bool BoCA::EncoderFAAC::Activate()
 {
-	const Config	*config = GetConfiguration();
-
 	const Format	&format = track.GetFormat();
 
 	/* Get configuration.
@@ -182,7 +197,7 @@ Bool BoCA::EncoderFAAC::Activate()
 			{
 				Buffer<unsigned char>	 id3Buffer;
 
-				tagger->SetConfiguration(GetConfiguration());
+				tagger->SetConfiguration(config);
 				tagger->RenderBuffer(id3Buffer, track);
 
 				driver->WriteData(id3Buffer, id3Buffer.Size());
@@ -216,8 +231,6 @@ Bool BoCA::EncoderFAAC::Activate()
 
 Bool BoCA::EncoderFAAC::Deactivate()
 {
-	const Config	*config = GetConfiguration();
-
 	/* Output remaining samples to encoder.
 	 */
 	EncodeFrames(True);
@@ -276,7 +289,7 @@ Bool BoCA::EncoderFAAC::Deactivate()
 
 				if (tagger != NIL)
 				{
-					tagger->SetConfiguration(GetConfiguration());
+					tagger->SetConfiguration(config);
 					tagger->RenderStreamInfo(track.outfile, track);
 
 					boca.DeleteComponent(tagger);
@@ -311,7 +324,7 @@ Bool BoCA::EncoderFAAC::Deactivate()
 			{
 				Buffer<unsigned char>	 id3Buffer;
 
-				tagger->SetConfiguration(GetConfiguration());
+				tagger->SetConfiguration(config);
 				tagger->RenderBuffer(id3Buffer, track);
 
 				driver->WriteData(id3Buffer, id3Buffer.Size());
@@ -334,7 +347,7 @@ Bool BoCA::EncoderFAAC::Deactivate()
 			{
 				Buffer<unsigned char>	 id3Buffer;
 
-				tagger->SetConfiguration(GetConfiguration());
+				tagger->SetConfiguration(config);
 				tagger->RenderBuffer(id3Buffer, track);
 
 				driver->Seek(0);
@@ -480,8 +493,6 @@ Bool BoCA::EncoderFAAC::SetOutputFormat(Int n)
 
 String BoCA::EncoderFAAC::GetOutputFileExtension() const
 {
-	const Config	*config = GetConfiguration();
-
 	if (config->GetIntValue(ConfigureFAAC::ConfigID, "MP4Container", True))
 	{
 		switch (config->GetIntValue(ConfigureFAAC::ConfigID, "MP4FileExtension", 0))
@@ -495,6 +506,33 @@ String BoCA::EncoderFAAC::GetOutputFileExtension() const
 	}
 
 	return "aac";
+}
+
+Bool BoCA::EncoderFAAC::ConvertArguments(Config *config)
+{
+	if (!config->GetIntValue("Settings", "EnableConsole", False)) return False;
+
+	static const String	 encoderID = "faac-enc";
+
+	/* Get command line settings.
+	 */
+	Int	 quality = 100;
+	Int	 bitrate = 64;
+
+	if (config->GetIntValue(encoderID, "Set VBR quality", False))		  quality = config->GetIntValue(encoderID, "VBR quality", quality);
+	if (config->GetIntValue(encoderID, "Set ABR bitrate per channel", False)) bitrate = config->GetIntValue(encoderID, "ABR bitrate per channel", bitrate);
+
+	/* Set configuration values.
+	 */
+	config->SetIntValue(ConfigureFAAC::ConfigID, "MPEGVersion", 0);
+
+	config->SetIntValue(ConfigureFAAC::ConfigID, "MP4Container", !config->GetIntValue(encoderID, "Write raw AAC files", False));
+	config->SetIntValue(ConfigureFAAC::ConfigID, "SetQuality", !config->GetIntValue(encoderID, "Set ABR bitrate per channel", False));
+
+	config->SetIntValue(ConfigureFAAC::ConfigID, "AACQuality", Math::Max(10, Math::Min(500, quality)));
+	config->SetIntValue(ConfigureFAAC::ConfigID, "Bitrate", Math::Max(8, Math::Min(256, bitrate)));
+
+	return True;
 }
 
 ConfigLayer *BoCA::EncoderFAAC::GetConfigurationLayer()

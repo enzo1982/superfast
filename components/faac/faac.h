@@ -22,6 +22,7 @@ namespace BoCA
 	{
 		private:
 			ConfigLayer		*configLayer;
+			Config			*config;
 
 			Array<SuperWorker *>	 workers;
 
@@ -43,6 +44,8 @@ namespace BoCA
 
 			Int			 EncodeFrames(Bool);
 			Int			 ProcessPackets(const Buffer<unsigned char> &, const Array<Int> &, Bool);
+
+			static Bool		 ConvertArguments(Config *);
 		public:
 			static const String	&GetComponentSpecs();
 

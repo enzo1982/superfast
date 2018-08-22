@@ -1,5 +1,5 @@
  /* BoCA - BonkEnc Component Architecture
-  * Copyright (C) 2007-2017 Robert Kausch <robert.kausch@freac.org>
+  * Copyright (C) 2007-2018 Robert Kausch <robert.kausch@freac.org>
   *
   * This program is free software; you can redistribute it and/or
   * modify it under the terms of the GNU General Public License as
@@ -25,22 +25,41 @@ const String &BoCA::EncoderSpeex::GetComponentSpecs()
 
 	if (oggdll != NIL && speexdll != NIL)
 	{
-		componentSpecs = "							\
-											\
-		  <?xml version=\"1.0\" encoding=\"UTF-8\"?>				\
-		  <component>								\
-		    <name>Speex Speech Encoder %VERSION% (SuperFast)</name>		\
-		    <version>1.0</version>						\
-		    <id>superspeex-enc</id>						\
-		    <type>encoder</type>						\
-		    <format>								\
-		      <name>Speex Files</name>						\
-		      <extension>spx</extension>					\
-		      <tag id=\"vorbis-tag\" mode=\"other\">Vorbis Comment</tag>	\
-		    </format>								\
-		    <input bits=\"16\" channels=\"1-2\" rate=\"8000,16000,32000\"/>	\
-		  </component>								\
-											\
+		componentSpecs = "									\
+													\
+		  <?xml version=\"1.0\" encoding=\"UTF-8\"?>						\
+		  <component>										\
+		    <name>Speex Speech Encoder %VERSION% (SuperFast)</name>				\
+		    <version>1.0</version>								\
+		    <id>superspeex-enc</id>								\
+		    <type>encoder</type>								\
+		    <format>										\
+		      <name>Speex Files</name>								\
+		      <extension>spx</extension>							\
+		      <tag id=\"vorbis-tag\" mode=\"other\">Vorbis Comment</tag>			\
+		    </format>										\
+		    <input bits=\"16\" channels=\"1-2\" rate=\"8000,16000,32000\"/>			\
+		    <parameters>									\
+		      <range name=\"Bitrate\" argument=\"--bitrate %VALUE\" default=\"32\">		\
+			<min>4</min>									\
+			<max>64</max>									\
+		      </range>										\
+		      <range name=\"Quality\" argument=\"--quality %VALUE\" default=\"8\">		\
+			<min alias=\"worst\">0</min>							\
+			<max alias=\"best\">10</max>							\
+		      </range>										\
+		      <range name=\"Encoding complexity\" argument=\"--comp %VALUE\" default=\"3\">	\
+			<min alias=\"fastest\">0</min>							\
+			<max alias=\"slowest\">10</max>							\
+		      </range>										\
+ 		      <switch name=\"Use VBR encoding\" argument=\"--vbr\"/>				\
+ 		      <range name=\"Use ABR encoding\" argument=\"--abr %VALUE\" default=\"32\">	\
+			<min>4</min>									\
+			<max>64</max>									\
+		      </range>										\
+		    </parameters>									\
+		  </component>										\
+													\
 		";
 
 		const char	*speexVersion = NIL;
@@ -80,6 +99,10 @@ BoCA::EncoderSpeex::EncoderSpeex()
 
 	nextWorker   = 0;
 
+	config	     = Config::Copy(GetConfiguration());
+
+	ConvertArguments(config);
+
 	memset(&os, 0, sizeof(os));
 	memset(&og, 0, sizeof(og));
 	memset(&op, 0, sizeof(op));
@@ -87,13 +110,13 @@ BoCA::EncoderSpeex::EncoderSpeex()
 
 BoCA::EncoderSpeex::~EncoderSpeex()
 {
+	Config::Free(config);
+
 	if (configLayer != NIL) Object::DeleteObject(configLayer);
 }
 
 Bool BoCA::EncoderSpeex::Activate()
 {
-	const Config	*config = GetConfiguration();
-
 	const Format	&format = track.GetFormat();
 	const Info	&info	= track.GetInfo();
 
@@ -167,7 +190,7 @@ Bool BoCA::EncoderSpeex::Activate()
 
 		if (tagger != NIL)
 		{
-			tagger->SetConfiguration(GetConfiguration());
+			tagger->SetConfiguration(config);
 			tagger->SetVendorString(String("Encoded with Speex ").Append(speexVersion));
 
 			if (config->GetIntValue("Tags", "EnableVorbisComment", True) && (info.HasBasicInfo() || (track.tracks.Length() > 0 && config->GetIntValue("Tags", "WriteChapters", True)))) tagger->RenderBuffer(vcBuffer, track);
@@ -379,7 +402,7 @@ Int BoCA::EncoderSpeex::WriteOggPackets(Bool flush)
 
 Bool BoCA::EncoderSpeex::FixChapterMarks()
 {
-	if (track.tracks.Length() == 0 || !GetConfiguration()->GetIntValue("Tags", "WriteChapters", True)) return True;
+	if (track.tracks.Length() == 0 || !config->GetIntValue("Tags", "WriteChapters", True)) return True;
 
 	driver->Seek(0);
 
@@ -461,6 +484,42 @@ Bool BoCA::EncoderSpeex::FixChapterMarks()
 	}
 
 	driver->Seek(driver->GetSize());
+
+	return True;
+}
+
+Bool BoCA::EncoderSpeex::ConvertArguments(Config *config)
+{
+	if (!config->GetIntValue("Settings", "EnableConsole", False)) return False;
+
+	static const String	 encoderID = "speex-enc";
+
+	/* Get command line settings.
+	 */
+	Int	 bitrate    = 16;
+	Int	 quality    = 8;
+	Int	 complexity = 3;
+	Int	 abrrate    = 16;
+
+	if (config->GetIntValue(encoderID, "Set Bitrate", False))	      bitrate	 = config->GetIntValue(encoderID, "Bitrate", bitrate);
+	if (config->GetIntValue(encoderID, "Set Quality", False))	      quality	 = config->GetIntValue(encoderID, "Quality", quality);
+	if (config->GetIntValue(encoderID, "Set Encoding complexity", False)) complexity = config->GetIntValue(encoderID, "Encoding complexity", complexity);
+	if (config->GetIntValue(encoderID, "Set Use ABR encoding", False))    abrrate	 = config->GetIntValue(encoderID, "Use ABR encoding", abrrate);
+
+	/* Set configuration values.
+	 */
+	config->SetIntValue(ConfigureSpeex::ConfigID, "Mode", -1);
+	config->SetIntValue(ConfigureSpeex::ConfigID, "VAD", False);
+	config->SetIntValue(ConfigureSpeex::ConfigID, "DTX", False);
+
+	config->SetIntValue(ConfigureSpeex::ConfigID, "VBR", config->GetIntValue(encoderID, "Use VBR encoding", False));
+
+	config->SetIntValue(ConfigureSpeex::ConfigID, "Bitrate", config->GetIntValue(encoderID, "Set Bitrate", False) ? Math::Max(4, Math::Min(64, bitrate)) : -16);
+	config->SetIntValue(ConfigureSpeex::ConfigID, "Quality", Math::Max(0, Math::Min(10, quality)));
+	config->SetIntValue(ConfigureSpeex::ConfigID, "VBRQuality", Math::Max(0, Math::Min(10, quality)) * 10);
+	config->SetIntValue(ConfigureSpeex::ConfigID, "VBRMaxBitrate", -48);
+	config->SetIntValue(ConfigureSpeex::ConfigID, "Complexity", Math::Max(0, Math::Min(10, complexity)));
+	config->SetIntValue(ConfigureSpeex::ConfigID, "ABR", config->GetIntValue(encoderID, "Set Use ABR encoding", False) ? Math::Max(4, Math::Min(64, abrrate)) : -16);
 
 	return True;
 }

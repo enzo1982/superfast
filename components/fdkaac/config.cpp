@@ -20,7 +20,7 @@ BoCA::ConfigureFDKAAC::ConfigureFDKAAC()
 	const Config	*config = Config::Get();
 
 	mpegVersion	= config->GetIntValue(ConfigID, "MPEGVersion", 0);
-	aacType		= config->GetIntValue(ConfigID, "AACType", AOT_SBR);
+	aacType		= config->GetIntValue(ConfigID, "AACType", AOT_AAC_LC);
 	bitrate		= config->GetIntValue(ConfigID, "Bitrate", 64);
 	allowID3	= config->GetIntValue(ConfigID, "AllowID3v2", False);
 	fileFormat	= config->GetIntValue(ConfigID, "MP4Container", True);
@@ -220,7 +220,7 @@ Void BoCA::ConfigureFDKAAC::SetMPEGVersion()
 	{
 		if (aacType == AOT_ER_AAC_LD || aacType == AOT_ER_AAC_ELD)
 		{
-			aacType = AOT_SBR;
+			aacType = AOT_AAC_LC;
 
 			OptionBox::internalCheckValues.Emit();
 		}

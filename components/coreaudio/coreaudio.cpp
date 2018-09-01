@@ -100,6 +100,7 @@ namespace BoCA
 BoCA::EncoderCoreAudio::EncoderCoreAudio()
 {
 	configLayer    = NIL;
+	config	       = NIL;
 
 	audioFile      = NIL;
 
@@ -116,15 +117,11 @@ BoCA::EncoderCoreAudio::EncoderCoreAudio()
 	packetsMissing = 0;
 
 	totalSamples   = 0;
-
-	config	       = Config::Copy(GetConfiguration());
-
-	ConvertArguments(config);
 }
 
 BoCA::EncoderCoreAudio::~EncoderCoreAudio()
 {
-	Config::Free(config);
+	if (config != NIL) Config::Free(config);
 
 	if (configLayer != NIL) Object::DeleteObject(configLayer);
 }
@@ -133,6 +130,8 @@ Bool BoCA::EncoderCoreAudio::IsLossless() const
 {
 	/* Get configuration.
 	 */
+	const Config	*config = GetConfiguration();
+
 	CA::UInt32	 codec = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatMPEG4AAC);
 
 	/* Signal lossless for ALAC.
@@ -150,6 +149,10 @@ Bool BoCA::EncoderCoreAudio::Activate()
 
 	/* Get configuration.
 	 */
+	config = Config::Copy(GetConfiguration());
+
+	ConvertArguments(config);
+
 	CA::UInt32	 codec	      = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Codec", CA::kAudioFormatMPEG4AAC);
 	Int		 kbps	      = config->GetIntValue(ConfigureCoreAudio::ConfigID, "Bitrate", 64);
 	Bool		 mp4Container = config->GetIntValue(ConfigureCoreAudio::ConfigID, "MP4Container", True);
@@ -582,6 +585,8 @@ Bool BoCA::EncoderCoreAudio::SetOutputFormat(Int n)
 
 String BoCA::EncoderCoreAudio::GetOutputFileExtension() const
 {
+	const Config	*config = GetConfiguration();
+
 	if (config->GetIntValue(ConfigureCoreAudio::ConfigID, "MP4Container", True))
 	{
 		switch (config->GetIntValue(ConfigureCoreAudio::ConfigID, "MP4FileExtension", 0))

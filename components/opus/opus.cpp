@@ -108,6 +108,7 @@ namespace BoCA
 BoCA::EncoderOpus::EncoderOpus()
 {
 	configLayer	= NIL;
+	config		= NIL;
 
 	frameSize	= 0;
 	preSkip		= 0;
@@ -122,10 +123,6 @@ BoCA::EncoderOpus::EncoderOpus()
 
 	nextWorker	= 0;
 
-	config		= Config::Copy(GetConfiguration());
-
-	ConvertArguments(config);
-
 	memset(&os, 0, sizeof(os));
 	memset(&og, 0, sizeof(og));
 	memset(&op, 0, sizeof(op));
@@ -133,7 +130,7 @@ BoCA::EncoderOpus::EncoderOpus()
 
 BoCA::EncoderOpus::~EncoderOpus()
 {
-	Config::Free(config);
+	if (config != NIL) Config::Free(config);
 
 	if (configLayer != NIL) Object::DeleteObject(configLayer);
 }
@@ -144,6 +141,12 @@ Bool BoCA::EncoderOpus::Activate()
 
 	const Format	&format = track.GetFormat();
 	Info		 info	= track.GetInfo();
+
+	/* Get configuration.
+	 */
+	config = Config::Copy(GetConfiguration());
+
+	ConvertArguments(config);
 
 	/* Get best sample rate.
 	 */
@@ -549,6 +552,8 @@ Bool BoCA::EncoderOpus::FixChapterMarks()
 
 String BoCA::EncoderOpus::GetOutputFileExtension() const
 {
+	const Config	*config = GetConfiguration();
+
 	switch (config->GetIntValue(ConfigureOpus::ConfigID, "FileExtension", 0))
 	{
 		default:

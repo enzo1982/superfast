@@ -97,6 +97,7 @@ Void smooth::DetachDLL()
 BoCA::EncoderFDKAAC::EncoderFDKAAC()
 {
 	configLayer  = NIL;
+	config	     = NIL;
 
 	mp4File	     = NIL;
 
@@ -112,15 +113,11 @@ BoCA::EncoderFDKAAC::EncoderFDKAAC()
 	delaySamples = 0;
 
 	nextWorker   = 0;
-
-	config	     = Config::Copy(GetConfiguration());
-
-	ConvertArguments(config);
 }
 
 BoCA::EncoderFDKAAC::~EncoderFDKAAC()
 {
-	Config::Free(config);
+	if (config != NIL) Config::Free(config);
 
 	if (configLayer != NIL) Object::DeleteObject(configLayer);
 }
@@ -131,6 +128,10 @@ Bool BoCA::EncoderFDKAAC::Activate()
 
 	/* Get configuration.
 	 */
+	config = Config::Copy(GetConfiguration());
+
+	ConvertArguments(config);
+
 	Bool	 mp4Container = config->GetIntValue(ConfigureFDKAAC::ConfigID, "MP4Container", True);
 	Int	 mpegVersion  = config->GetIntValue(ConfigureFDKAAC::ConfigID, "MPEGVersion", 0);
 	Int	 aacType      = config->GetIntValue(ConfigureFDKAAC::ConfigID, "AACType", AOT_AAC_LC);
@@ -507,6 +508,8 @@ Bool BoCA::EncoderFDKAAC::SetOutputFormat(Int n)
 
 String BoCA::EncoderFDKAAC::GetOutputFileExtension() const
 {
+	const Config	*config = GetConfiguration();
+
 	if (config->GetIntValue(ConfigureFDKAAC::ConfigID, "MP4Container", True))
 	{
 		switch (config->GetIntValue(ConfigureFDKAAC::ConfigID, "MP4FileExtension", 0))

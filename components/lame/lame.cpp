@@ -76,6 +76,7 @@ Void smooth::DetachDLL()
 BoCA::EncoderLAME::EncoderLAME()
 {
 	configLayer  = NIL;
+	config	     = NIL;
 
 	dataOffset   = 0;
 	frameSize    = 0;
@@ -88,15 +89,11 @@ BoCA::EncoderLAME::EncoderLAME()
 	totalSamples = 0;
 
 	repacker     = NIL;
-
-	config	     = Config::Copy(GetConfiguration());
-
-	ConvertArguments(config);
 }
 
 BoCA::EncoderLAME::~EncoderLAME()
 {
-	Config::Free(config);
+	if (config != NIL) Config::Free(config);
 
 	if (configLayer != NIL) Object::DeleteObject(configLayer);
 }
@@ -108,6 +105,10 @@ Bool BoCA::EncoderLAME::Activate()
 
 	/* Get configuration.
 	 */
+	config = Config::Copy(GetConfiguration());
+
+	ConvertArguments(config);
+
 	Int	 preset		  = config->GetIntValue(ConfigureLAME::ConfigID, "Preset", 2);
 	Int	 vbrMode	  = config->GetIntValue(ConfigureLAME::ConfigID, "VBRMode", 4);
 	Bool	 setBitrate	  = config->GetIntValue(ConfigureLAME::ConfigID, "SetBitrate", 1);

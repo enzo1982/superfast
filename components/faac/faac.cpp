@@ -102,6 +102,7 @@ Void smooth::DetachDLL()
 BoCA::EncoderFAAC::EncoderFAAC()
 {
 	configLayer  = NIL;
+	config	     = NIL;
 
 	mp4File	     = NIL;
 
@@ -116,15 +117,11 @@ BoCA::EncoderFAAC::EncoderFAAC()
 	totalSamples = 0;
 
 	nextWorker   = 0;
-
-	config	     = Config::Copy(GetConfiguration());
-
-	ConvertArguments(config);
 }
 
 BoCA::EncoderFAAC::~EncoderFAAC()
 {
-	Config::Free(config);
+	if (config != NIL) Config::Free(config);
 
 	if (configLayer != NIL) Object::DeleteObject(configLayer);
 }
@@ -135,6 +132,10 @@ Bool BoCA::EncoderFAAC::Activate()
 
 	/* Get configuration.
 	 */
+	config = Config::Copy(GetConfiguration());
+
+	ConvertArguments(config);
+
 	Bool	 mp4Container = config->GetIntValue(ConfigureFAAC::ConfigID, "MP4Container", True);
 	Int	 mpegVersion  = config->GetIntValue(ConfigureFAAC::ConfigID, "MPEGVersion", 0);
 
@@ -493,6 +494,8 @@ Bool BoCA::EncoderFAAC::SetOutputFormat(Int n)
 
 String BoCA::EncoderFAAC::GetOutputFileExtension() const
 {
+	const Config	*config = GetConfiguration();
+
 	if (config->GetIntValue(ConfigureFAAC::ConfigID, "MP4Container", True))
 	{
 		switch (config->GetIntValue(ConfigureFAAC::ConfigID, "MP4FileExtension", 0))

@@ -87,6 +87,7 @@ Void smooth::DetachDLL()
 BoCA::EncoderSpeex::EncoderSpeex()
 {
 	configLayer  = NIL;
+	config	     = NIL;
 
 	frameSize    = 0;
 	lookAhead    = 0;
@@ -99,10 +100,6 @@ BoCA::EncoderSpeex::EncoderSpeex()
 
 	nextWorker   = 0;
 
-	config	     = Config::Copy(GetConfiguration());
-
-	ConvertArguments(config);
-
 	memset(&os, 0, sizeof(os));
 	memset(&og, 0, sizeof(og));
 	memset(&op, 0, sizeof(op));
@@ -110,7 +107,7 @@ BoCA::EncoderSpeex::EncoderSpeex()
 
 BoCA::EncoderSpeex::~EncoderSpeex()
 {
-	Config::Free(config);
+	if (config != NIL) Config::Free(config);
 
 	if (configLayer != NIL) Object::DeleteObject(configLayer);
 }
@@ -119,6 +116,12 @@ Bool BoCA::EncoderSpeex::Activate()
 {
 	const Format	&format = track.GetFormat();
 	const Info	&info	= track.GetInfo();
+
+	/* Get configuration.
+	 */
+	config = Config::Copy(GetConfiguration());
+
+	ConvertArguments(config);
 
 	/* Init Ogg stream.
 	 */

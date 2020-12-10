@@ -1,3 +1,5 @@
+**Attention:** *SuperFast codecs have been integrated into mainline fre:ac. This repository is kept here for reference only, but is no longer updated. Please refer to the [_fre:ac Component Architecture_](https://github.com/enzo1982/BoCA/) project for an up to date version of this code.*
+
 # SuperFast Codecs
 ## Multi-threaded MP3, AAC, Opus and Speex codec drivers for fre:ac
 
